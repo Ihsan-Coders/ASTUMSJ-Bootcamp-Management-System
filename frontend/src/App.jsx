@@ -1,14 +1,25 @@
+import { useState } from "react";
+import Navbar from "./components/common/Navbar";
+import Footer from "./components/common/Footer";
+import LoginForm from "./components/auth/LoginForm";
+import RegisterForm from "./components/auth/RegisterForm";
 function App() {
+  const [showRegister, setShowRegister] = useState(false);
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="bg-surface text-text-primary p-6 rounded-lg border border-border">
-        <h1 className="text-2xl font-bold text-primary">
-          Tailwind v4 is working
-        </h1>
-        <p className="text-text-secondary">
-          If this box has a border and the heading is blue, you're good.
-        </p>
-      </div>
+    <div className="min-h-screen flex flex-col">
+      <Navbar />
+      <main className="flex-1 flex flex-col items-center justify-center gap-4">
+        {showRegister ? <RegisterForm /> : <LoginForm />}
+        <button
+          onClick={() => setShowRegister(!showRegister)}
+          className="text-sm text-primary hover:underline"
+        >
+          {showRegister
+            ? "Already have an account? Login"
+            : "Need an account? Register"}
+        </button>
+      </main>
+      <Footer />
     </div>
   );
 }
