@@ -1,5 +1,4 @@
-const mongoose = require('mongoose');
-
+const mongoose = require("mongoose");
 const assignmentSchema = new mongoose.Schema(
   {
     title: {
@@ -22,7 +21,7 @@ const assignmentSchema = new mongoose.Schema(
 
     batch: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Batch',
+      ref: "Batch",
       required: true,
       index: true,
     },
@@ -41,14 +40,14 @@ const assignmentSchema = new mongoose.Schema(
 
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
       required: true,
       index: true,
     },
   },
   {
     timestamps: true,
-  }
+  },
 );
 
-module.exports = mongoose.model('Assignment', assignmentSchema);
+module.exports = mongoose.model("Assignment", assignmentSchema);

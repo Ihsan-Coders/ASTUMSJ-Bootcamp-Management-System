@@ -1,5 +1,4 @@
-const mongoose = require('mongoose');
-
+const mongoose = require("mongoose");
 const attachmentSchema = new mongoose.Schema(
   {
     url: {
@@ -28,21 +27,21 @@ const attachmentSchema = new mongoose.Schema(
   },
   {
     _id: false,
-  }
+  },
 );
 
 const submissionSchema = new mongoose.Schema(
   {
     assignment: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Assignment',
+      ref: "Assignment",
       required: true,
       index: true,
     },
 
     student: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
       required: true,
       index: true,
     },
@@ -80,8 +79,8 @@ const submissionSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ['Submitted', 'Graded', 'Resubmission Requested'],
-      default: 'Submitted',
+      enum: ["Submitted", "Graded", "Resubmission Requested"],
+      default: "Submitted",
       index: true,
     },
 
@@ -98,12 +97,9 @@ const submissionSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
-submissionSchema.index(
-  { assignment: 1, student: 1 },
-  { unique: true }
-);
+submissionSchema.index({ assignment: 1, student: 1 }, { unique: true });
 
-module.exports = mongoose.model('Submission', submissionSchema);
+module.exports = mongoose.model("Submission", submissionSchema);
