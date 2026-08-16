@@ -1,21 +1,33 @@
 import { useState } from "react";
+import { loginUser } from "../../api/auth.api";
+import { useAuth } from "../../context/AuthContext";
+
 export default function LoginForm() {
   const [form, setForm] = useState({ email: "", password: "" });
+  const [error, setError] = useState("");
+  const { login } = useAuth();
+
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
-  const handleSubmit = (e) => {
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log(
-      "Login submit (real API wiring comes once M1 confirms auth is live):",
-      form,
-    );
+    setError("");
+    try {
+      const res = await loginUser(form);
+      login(res.data.data.user, res.data.data.token);
+    } catch (err) {
+      setError(err.response?.data?.message || "Login failed");
+    }
   };
+
   return (
     <form
       onSubmit={handleSubmit}
       className="bg-surface p-6 rounded-lg border border-border max-w-sm mx-auto"
     >
       <h2 className="text-xl font-semibold text-text-primary mb-4">Login</h2>
+      {error && <p className="text-danger text-sm mb-3">{error}</p>}
       <input
         type="email"
         name="email"

@@ -1,5 +1,4 @@
-const rateLimit = require('express-rate-limit');
-
+const rateLimit = require("express-rate-limit");
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
@@ -15,7 +14,7 @@ const authLimiter = rateLimit({
   message: {
     success: false,
     data: null,
-    message: 'Too many authentication attempts. Please try again later.',
+    message: "Too many authentication attempts. Please try again later.",
   },
 });
 
