@@ -11,7 +11,7 @@ router.use("/alumni", alumniRoutes);
 router.use("/batches", batchRoutes);
 router.use("/users", userRoutes);
 router.use("/auth", authRoutes);
-router.use("/attendance", require("./attendance.routes"));
-router.use("/calendar", require("./calendar.routes"));
 
 module.exports = router;
+
+router.use("/announcements", require("./announcement.routes"));

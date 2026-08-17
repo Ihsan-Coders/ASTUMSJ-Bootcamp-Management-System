@@ -1,5 +1,6 @@
 const Notification = require("../models/Notification");
 
+// Creates and saves a notification for a user
 const createNotification = async ({ userId, type, message, relatedId }) => {
   try {
     return await Notification.create({
@@ -12,13 +13,5 @@ const createNotification = async ({ userId, type, message, relatedId }) => {
     console.error("Failed to create notification:", err.message);
   }
 };
-
-// Example future usage (M3 will call this when a submission is graded):
-// await createNotification({
-//   userId: submission.student,
-//   type: 'GradePosted',
-//   message: `Your submission for "${assignment.title}" has been graded.`,
-//   relatedId: submission._id,
-// });
 
 module.exports = { createNotification };
