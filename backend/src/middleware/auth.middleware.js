@@ -1,15 +1,14 @@
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
-
+const jwt = require("jsonwebtoken");
+const User = require("../models/User");
 const protect = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return res.status(401).json({
         success: false,
         data: null,
-        message: 'Not authorized',
+        message: "Not authorized",
       });
     }
 
@@ -19,23 +18,23 @@ const protect = async (req, res, next) => {
       return res.status(401).json({
         success: false,
         data: null,
-        message: 'Not authorized',
+        message: "Not authorized",
       });
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET, {
-      issuer: 'astu-msj-bootcamp',
+      issuer: "astu-msj-bootcamp",
     });
 
     const user = await User.findById(decoded.id).select(
-      '_id name email role isActive'
+      "_id name email role isActive",
     );
 
     if (!user) {
       return res.status(401).json({
         success: false,
         data: null,
-        message: 'User no longer exists',
+        message: "User no longer exists",
       });
     }
 
@@ -43,7 +42,7 @@ const protect = async (req, res, next) => {
       return res.status(403).json({
         success: false,
         data: null,
-        message: 'Account is disabled',
+        message: "Account is disabled",
       });
     }
 
@@ -55,22 +54,24 @@ const protect = async (req, res, next) => {
     };
 
     next();
-
   } catch (error) {
-    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+    if (
+      error.name === "JsonWebTokenError" ||
+      error.name === "TokenExpiredError"
+    ) {
       return res.status(401).json({
         success: false,
         data: null,
-        message: 'Invalid or expired token',
+        message: "Invalid or expired token",
       });
     }
 
-    console.error('Authentication error:', error);
+    console.error("Authentication error:", error);
 
     return res.status(500).json({
       success: false,
       data: null,
-      message: 'Authentication failed',
+      message: "Authentication failed",
     });
   }
 };
