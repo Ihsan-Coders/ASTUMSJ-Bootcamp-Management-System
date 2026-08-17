@@ -1,8 +1,10 @@
 const Assignment = require('../models/Assignment');
+const { syncAssignmentDeadline } = require('../services/calendar.service');
 
 const createAssignment = async (req, res) => {
   try {
     const assignment = await Assignment.create({ ...req.body, createdBy: req.user.id });
+    await syncAssignmentDeadline(assignment); // keeps M2's calendar in sync automatically
     res.status(201).json({ success: true, data: assignment, message: 'Assignment created' });
   } catch (err) {
     res.status(500).json({ success: false, data: null, message: err.message });
@@ -23,6 +25,7 @@ const getAssignments = async (req, res) => {
 const updateAssignment = async (req, res) => {
   try {
     const assignment = await Assignment.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (assignment) await syncAssignmentDeadline(assignment); // keep calendar in sync on edits too
     res.status(200).json({ success: true, data: assignment, message: 'Assignment updated' });
   } catch (err) {
     res.status(500).json({ success: false, data: null, message: err.message });
