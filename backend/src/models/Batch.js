@@ -8,6 +8,8 @@ const batchSchema = new mongoose.Schema(
     mentors: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     students: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     isActive: { type: Boolean, default: true },
+    registrationStart: { type: Date, required: true },
+    registrationEnd: { type: Date, required: true },
   },
   { timestamps: true }
 );
