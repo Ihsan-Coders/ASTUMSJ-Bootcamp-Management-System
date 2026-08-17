@@ -5,8 +5,8 @@ const resourceRoutes = require("./resource.routes");
 const alumniRoutes = require("./alumni.routes");
 const batchRoutes = require("./batch.routes");
 const userRoutes = require("./user.routes");
-
-
+router.use("/mentor-notes", require("./mentorNote.routes"));
+router.use("/badges", require("./badge.routes"));
 router.use("/resources", resourceRoutes);
 router.use("/alumni", alumniRoutes);
 router.use("/batches", batchRoutes);
