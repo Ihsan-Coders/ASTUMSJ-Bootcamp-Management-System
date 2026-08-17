@@ -52,7 +52,7 @@ const register = async (req, res) => {
       role: 'student',
     });
 
-    const token = generateToken(user._id, user.role);
+    const token = generateToken(user._id);
 
     return res.status(201).json({
       success: true,
@@ -129,7 +129,7 @@ const login = async (req, res) => {
       });
     }
 
-    const token = generateToken(user._id, user.role);
+    const token = generateToken(user._id);
 
     return res.status(200).json({
       success: true,

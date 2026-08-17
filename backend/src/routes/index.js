@@ -6,6 +6,7 @@ const alumniRoutes = require("./alumni.routes");
 const batchRoutes = require('./batch.routes');
 const userRoutes = require('./user.routes');
 
+
 router.use("/resources", resourceRoutes);
 router.use("/alumni", alumniRoutes);
 router.use('/batches', batchRoutes);
