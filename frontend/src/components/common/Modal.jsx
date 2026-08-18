@@ -6,7 +6,7 @@ export default function Modal({ isOpen, onClose, title, children, footer }) {
       onClick={onClose}
     >
       <div
-        className="bg-surface text-text-primary rounded-lg shadow-xl w-full max-w-md p-6"
+        className="glass-card glow-border text-text-primary rounded-lg shadow-xl w-full max-w-md p-6"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center mb-4 border-b border-border pb-3">

@@ -1,27 +1,33 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
 @theme {
-  --color-primary: #2563eb;
-  --color-secondary: #7c3aed;
+  --color-obsidian: #0A0F0D;
+  --color-deep-emerald: #051C14;
+  --color-gold: #D4AF37;
+  --color-gold-light: #E8C766;
+  --color-emerald: #10B981;
+  --color-cream: #F8F9FA;
   --color-danger: #dc2626;
-  --color-success: #16a34a;
   --color-warning: #f59e0b;
   --font-sans: 'Inter', system-ui, sans-serif;
 }
+
 :root {
-  --color-background: #f8fafc;
-  --color-surface: #ffffff;
-  --color-text-primary: #0f172a;
-  --color-text-secondary: #64748b;
-  --color-border: #e2e8f0;
+  --color-background: var(--color-obsidian);
+  --color-surface: rgba(10, 35, 26, 0.75);
+  --color-text-primary: var(--color-cream);
+  --color-text-secondary: #A8B5AF;
+  --color-border: rgba(212, 175, 55, 0.3);
 }
-.dark {
-  --color-background: #0f172a;
-  --color-surface: #1e293b;
-  --color-text-primary: #f8fafc;
-  --color-text-secondary: #94a3b8;
-  --color-border: #334155;
+
+.light {
+  --color-background: #F4F6F5;
+  --color-surface: rgba(255, 255, 255, 0.85);
+  --color-text-primary: #0A0F0D;
+  --color-text-secondary: #4B5563;
+  --color-border: rgba(212, 175, 55, 0.4);
 }
+
 @theme inline {
   --color-background: var(--color-background);
   --color-surface: var(--color-surface);
@@ -29,9 +35,27 @@
   --color-text-secondary: var(--color-text-secondary);
   --color-border: var(--color-border);
 }
+
 body {
   background-color: var(--color-background);
   color: var(--color-text-primary);
   font-family: var(--font-sans);
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.glass-card {
+  background: var(--color-surface);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--color-border);
+}
+
+.glow-border { transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+.glow-border:hover {
+  border-color: var(--color-gold-light);
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.15);
+}
+
+.arch-top {
+  border-radius: 9999px 9999px 12px 12px / 40px 40px 12px 12px;
 }
