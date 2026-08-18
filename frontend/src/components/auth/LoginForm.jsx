@@ -24,7 +24,7 @@ export default function LoginForm() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="bg-surface p-6 rounded-lg border border-border max-w-sm mx-auto"
+      className="glass-card glow-border rounded-lg p-6 max-w-sm mx-auto"
     >
       <h2 className="text-xl font-semibold text-text-primary mb-4">Login</h2>
       {error && <p className="text-danger text-sm mb-3">{error}</p>}
@@ -48,7 +48,7 @@ export default function LoginForm() {
       />
       <button
         type="submit"
-        className="w-full bg-primary text-white py-2 rounded hover:opacity-90"
+        className="w-full py-2 rounded font-semibold text-obsidian bg-gradient-to-r from-gold to-emerald hover:shadow-[0_0_20px_rgba(212,175,55,0.35)] transition-shadow"
       >
         Login
       </button>

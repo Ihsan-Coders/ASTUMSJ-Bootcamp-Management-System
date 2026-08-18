@@ -7,7 +7,7 @@ export default function Loader({ size = "md" }) {
   return (
     <div className="flex justify-center items-center py-8">
       <div
-        className={`${sizes[size]} border-primary border-t-transparent rounded-full animate-spin`}
+        className={`${sizes[size]} border-gold border-t-transparent rounded-full animate-spin`}
         role="status"
         aria-label="Loading"
       />

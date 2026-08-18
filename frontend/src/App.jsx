@@ -3,6 +3,9 @@ import Navbar from "./components/common/Navbar";
 import Footer from "./components/common/Footer";
 import LoginForm from "./components/auth/LoginForm";
 import RegisterForm from "./components/auth/RegisterForm";
+import StatCard from "./components/common/StatCard";
+// add this somewhere inside your existing App.jsx return, temporarily:
+
 function App() {
   const [showRegister, setShowRegister] = useState(false);
   return (
@@ -18,6 +21,7 @@ function App() {
             ? "Already have an account? Login"
             : "Need an account? Register"}
         </button>
+        <StatCard label="Active Batches" value="4" icon="📊" />
       </main>
       <Footer />
     </div>

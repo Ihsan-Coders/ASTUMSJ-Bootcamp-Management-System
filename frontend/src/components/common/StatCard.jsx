@@ -1,0 +1,14 @@
+import { motion } from "framer-motion";
+
+export default function StatCard({ label, value, icon }) {
+  return (
+    <motion.div
+      whileHover={{ y: -4 }}
+      className="glass-card glow-border arch-top p-6 text-center"
+    >
+      {icon && <div className="text-3xl mb-2">{icon}</div>}
+      <div className="text-3xl font-bold text-gold">{value}</div>
+      <div className="text-text-secondary text-sm mt-1">{label}</div>
+    </motion.div>
+  );
+}
