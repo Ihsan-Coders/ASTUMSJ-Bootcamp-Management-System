@@ -1,3 +1,4 @@
+import { NotificationProvider } from "./context/NotificationContext";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles/index.css";
@@ -8,7 +9,9 @@ createRoot(document.getElementById("root")).render(
   <StrictMode>
     <ThemeProvider>
       <AuthProvider>
-        <App />
+        <NotificationProvider>
+          <App />
+        </NotificationProvider>
       </AuthProvider>
     </ThemeProvider>
   </StrictMode>,
