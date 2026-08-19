@@ -1,9 +1,9 @@
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X } from 'lucide-react';
-import DarkModeToggle from './DarkModeToggle';
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Menu, X } from "lucide-react";
+import DarkModeToggle from "./DarkModeToggle";
 
-const LINKS = ['Home', 'Tracks', 'Mentors', 'Announcements', 'FAQ'];
+const LINKS = ["Home", "Tracks", "Mentors", "Announcements", "FAQ"];
 
 export default function Navbar({ minimal = false }) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -17,7 +17,6 @@ export default function Navbar({ minimal = false }) {
                  bg-gradient-to-b from-[rgba(10,35,26,0.9)] to-[rgba(10,35,26,0.6)]"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-
         {/* Logo */}
         <div className="flex items-center gap-3 shrink-0">
           <div
@@ -28,11 +27,11 @@ export default function Navbar({ minimal = false }) {
                        overflow-hidden"
           >
             <img
-              src="./assets/astu-msj-logo.jpg"
+              src="\src\assets\astu-msj-logo.jpg"
               alt="ASTU MSJ Bootcamp Logo"
-              className="h-full w-full object-contain drop-shadow-md"
+              className="w-full h-full object-cover scale-105 rounded-full"
               onError={(e) => {
-                e.currentTarget.style.display = 'none';
+                e.currentTarget.style.display = "none";
               }}
             />
           </div>
@@ -80,7 +79,7 @@ export default function Navbar({ minimal = false }) {
             <button
               className="md:hidden text-text-primary"
               onClick={() => setMobileOpen((v) => !v)}
-              aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+              aria-label={mobileOpen ? "Close menu" : "Open menu"}
             >
               {mobileOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -101,7 +100,7 @@ export default function Navbar({ minimal = false }) {
           {mobileOpen && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
+              animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.25 }}
               className="md:hidden overflow-hidden border-t border-gold/20"
