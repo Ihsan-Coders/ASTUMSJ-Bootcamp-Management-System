@@ -20,7 +20,7 @@ export default function Navbar({ minimal = false }) {
         {/* Logo */}
         <div className="flex items-center gap-3 shrink-0">
           <div
-            className="relative flex items-center justify-center w-11 h-11 p-1.5 rounded-xl
+            className="relative flex items-center justify-center w-11 h-11 p-1 rounded-full
                        bg-gradient-to-br from-[#D4AF37]/30 to-[#10B981]/10
                        border border-[#D4AF37]/40
                        shadow-[0_0_15px_rgba(212,175,55,0.15)]
