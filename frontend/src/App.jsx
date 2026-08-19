@@ -27,7 +27,6 @@ function App() {
             : "Need an account? Register"}
         </button>
       </main>
-
       <Footer />
       <BottomNav />
     </div>
