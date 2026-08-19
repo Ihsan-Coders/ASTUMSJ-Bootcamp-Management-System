@@ -1,6 +1,8 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
+  /* Core palette — Emerald Oasis */
   --color-obsidian: #0A0F0D;
   --color-deep-emerald: #051C14;
   --color-gold: #D4AF37;
@@ -9,20 +11,25 @@
   --color-cream: #F8F9FA;
   --color-danger: #dc2626;
   --color-warning: #f59e0b;
+
   --font-sans: 'Inter', system-ui, sans-serif;
+  --font-display: 'Poppins', 'Inter', sans-serif;
 }
 
 :root {
   --color-background: var(--color-obsidian);
   --color-surface: rgba(10, 35, 26, 0.75);
+  --color-surface-solid: #0A231A;
   --color-text-primary: var(--color-cream);
   --color-text-secondary: #A8B5AF;
   --color-border: rgba(212, 175, 55, 0.3);
 }
 
+/* Dark-mode-first brand identity; light kept for accessibility/toggle */
 .light {
   --color-background: #F4F6F5;
   --color-surface: rgba(255, 255, 255, 0.85);
+  --color-surface-solid: #FFFFFF;
   --color-text-primary: #0A0F0D;
   --color-text-secondary: #4B5563;
   --color-border: rgba(212, 175, 55, 0.4);
@@ -31,6 +38,7 @@
 @theme inline {
   --color-background: var(--color-background);
   --color-surface: var(--color-surface);
+  --color-surface-solid: var(--color-surface-solid);
   --color-text-primary: var(--color-text-primary);
   --color-text-secondary: var(--color-text-secondary);
   --color-border: var(--color-border);
@@ -43,6 +51,7 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/* Glassmorphic surface utility */
 .glass-card {
   background: var(--color-surface);
   backdrop-filter: blur(16px);
@@ -50,12 +59,26 @@ body {
   border: 1px solid var(--color-border);
 }
 
-.glow-border { transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+/* Glowing gold border on hover — interactive cards */
+.glow-border {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
 .glow-border:hover {
   border-color: var(--color-gold-light);
   box-shadow: 0 0 20px rgba(212, 175, 55, 0.15);
 }
 
+/* Arch-shaped top corners (Mihrab silhouette) for metric cards + modal headers */
 .arch-top {
   border-radius: 9999px 9999px 12px 12px / 40px 40px 12px 12px;
+}
+
+/* Respect reduced-motion preference across the app */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
