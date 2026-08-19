@@ -19,4 +19,4 @@ router.get('/admin', authorize('admin'), getAdminDashboard);
 router.get('/mentor', authorize('mentor'), getMentorDashboard || notYetImplemented('getMentorDashboard'));
 router.get('/student', authorize('student'), getStudentDashboard || notYetImplemented('getStudentDashboard'));
 
-module.exports = router;
+module.exports = router; 
