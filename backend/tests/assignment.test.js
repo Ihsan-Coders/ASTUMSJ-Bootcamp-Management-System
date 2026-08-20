@@ -1,5 +1,4 @@
 /**
- * assignment.test.js — Day 8 M3
  *
  * Assumes Jest + Supertest + mongodb-memory-server, the most common stack for a
  * MERN project like this one. Adjust the imports below if your team chose a
