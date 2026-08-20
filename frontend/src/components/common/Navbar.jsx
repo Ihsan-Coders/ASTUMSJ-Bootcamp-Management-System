@@ -1,12 +1,29 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+
 import DarkModeToggle from "./DarkModeToggle";
+import { useAuth } from "../../context/AuthContext";
 
 const LINKS = ["Home", "Tracks", "Mentors", "Announcements", "FAQ"];
 
 export default function Navbar({ minimal = false }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    setMobileOpen(false);
+    navigate("/");
+  };
+
+  const handleLogin = () => {
+    setMobileOpen(false);
+    navigate("/");
+  };
 
   return (
     <motion.nav
@@ -27,7 +44,7 @@ export default function Navbar({ minimal = false }) {
                        overflow-hidden"
           >
             <img
-              src="\src\assets\astu-msj-logo.jpg"
+              src="/src/assets/astu-msj-logo.jpg"
               alt="ASTU MSJ Bootcamp Logo"
               className="w-full h-full object-cover scale-105 rounded-full"
               onError={(e) => {
@@ -61,18 +78,42 @@ export default function Navbar({ minimal = false }) {
             <div className="hidden md:flex items-center gap-3">
               <DarkModeToggle />
 
-              <button className="text-sm text-text-secondary hover:text-text-primary transition-colors">
-                Login
-              </button>
+              {user ? (
+                <>
+                  <span className="text-sm text-text-secondary">
+                    {user.name}
+                  </span>
 
-              <button
-                className="text-sm px-4 py-2 rounded-lg font-semibold text-obsidian
-                           bg-gradient-to-r from-gold to-emerald
-                           hover:shadow-[0_0_20px_rgba(212,175,55,0.4)]
-                           transition-shadow"
-              >
-                Get Started
-              </button>
+                  <button
+                    onClick={handleLogout}
+                    className="text-sm px-4 py-2 rounded-lg font-semibold text-obsidian
+                               bg-gradient-to-r from-gold to-emerald
+                               hover:shadow-[0_0_20px_rgba(212,175,55,0.4)]
+                               transition-shadow"
+                  >
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={handleLogin}
+                    className="text-sm text-text-secondary hover:text-text-primary transition-colors"
+                  >
+                    Login
+                  </button>
+
+                  <button
+                    onClick={handleLogin}
+                    className="text-sm px-4 py-2 rounded-lg font-semibold text-obsidian
+                               bg-gradient-to-r from-gold to-emerald
+                               hover:shadow-[0_0_20px_rgba(212,175,55,0.4)]
+                               transition-shadow"
+                  >
+                    Get Started
+                  </button>
+                </>
+              )}
             </div>
 
             {/* Mobile Menu Button */}
@@ -110,6 +151,7 @@ export default function Navbar({ minimal = false }) {
                   <a
                     key={link}
                     href={`#${link.toLowerCase()}`}
+                    onClick={() => setMobileOpen(false)}
                     className="text-text-secondary hover:text-gold text-sm"
                   >
                     {link}
@@ -119,15 +161,38 @@ export default function Navbar({ minimal = false }) {
                 <div className="flex items-center justify-between pt-2 border-t border-gold/10">
                   <DarkModeToggle />
 
-                  <div className="flex gap-2">
-                    <button className="text-sm text-text-secondary">
-                      Login
-                    </button>
+                  {user ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-text-secondary">
+                        {user.name}
+                      </span>
 
-                    <button className="text-sm px-4 py-2 rounded-lg font-semibold text-obsidian bg-gradient-to-r from-gold to-emerald">
-                      Get Started
-                    </button>
-                  </div>
+                      <button
+                        onClick={handleLogout}
+                        className="text-sm px-4 py-2 rounded-lg font-semibold text-obsidian
+                                   bg-gradient-to-r from-gold to-emerald"
+                      >
+                        Logout
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleLogin}
+                        className="text-sm text-text-secondary"
+                      >
+                        Login
+                      </button>
+
+                      <button
+                        onClick={handleLogin}
+                        className="text-sm px-4 py-2 rounded-lg font-semibold text-obsidian
+                                   bg-gradient-to-r from-gold to-emerald"
+                      >
+                        Get Started
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </motion.div>
