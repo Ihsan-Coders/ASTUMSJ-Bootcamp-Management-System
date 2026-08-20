@@ -6,6 +6,8 @@ const app = express();
 
 const { generalLimiter } = require('./middleware/rateLimiter.middleware');
 const routes = require('./routes');
+const notFound = require('./middleware/notFound.middleware');
+const errorHandler = require('./middleware/errorHandler.middleware');
 
 // Security middleware
 app.use(helmet());
@@ -27,5 +29,8 @@ app.get('/api/health', (req, res) => {
     message: 'API is running',
   });
 });
+
+app.use(notFound);
+app.use(errorHandler);
 
 module.exports = app;
