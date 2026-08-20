@@ -17,7 +17,7 @@ import RegisterForm from "./components/auth/RegisterForm";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 import { useAuth } from "./context/AuthContext";
-
+import MentorDashboard from "./pages/mentor/MentorDashboard";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 
 
@@ -65,6 +65,16 @@ function AppContent() {
             element={
               <ProtectedRoute allowedRoles={["admin"]}>
                 <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Mentor */}
+          <Route
+            path="/mentor"
+            element={
+              <ProtectedRoute allowedRoles={["mentor"]}>
+                <MentorDashboard />
               </ProtectedRoute>
             }
           />
