@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import DarkModeToggle from "./DarkModeToggle";
 
-const LINKS = ["Home", "Tracks", "Mentors", "Announcements", "FAQ"];
+const LINKS = ["Home", "About", "Tracks", "Mentors", "FAQ", "Contact"];
 
 export default function Navbar({ minimal = false }) {
   const [mobileOpen, setMobileOpen] = useState(false);
