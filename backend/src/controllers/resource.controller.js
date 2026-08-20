@@ -1,6 +1,7 @@
 const Resource = require("../models/Resource");
-const createResource = async (req, res) => {
-  try {
+const asyncHandler = require('../utils/asyncHandler');
+
+const createResource = asyncHandler(async (req, res) => {
     const resource = await Resource.create({
       ...req.body,
       uploadedBy: req.user.id,
@@ -8,12 +9,10 @@ const createResource = async (req, res) => {
     res
       .status(201)
       .json({ success: true, data: resource, message: "Resource added" });
-  } catch (err) {
-    res.status(500).json({ success: false, data: null, message: err.message });
-  }
-};
-const getResources = async (req, res) => {
-  try {
+  
+})
+
+const getResources = asyncHandler(async (req, res) => {
     const { topic, search } = req.query;
     const filter = {};
     if (topic) filter.topic = topic;
@@ -22,20 +21,14 @@ const getResources = async (req, res) => {
     res
       .status(200)
       .json({ success: true, data: resources, message: "Resources fetched" });
-  } catch (err) {
-    res.status(500).json({ success: false, data: null, message: err.message });
-  }
-};
+  
+})
 
-const deleteResource = async (req, res) => {
-  try {
+const deleteResource = asyncHandler(async (req, res) => {
     await Resource.findByIdAndDelete(req.params.id);
     res
       .status(200)
       .json({ success: true, data: null, message: "Resource deleted" });
-  } catch (err) {
-    res.status(500).json({ success: false, data: null, message: err.message });
-  }
-};
+})
 
 module.exports = { createResource, getResources, deleteResource };

@@ -1,8 +1,8 @@
 const Notification = require("../models/Notification");
+const asyncHandler = require('../utils/asyncHandler');
 
 // Get all notifications belonging to the currently logged-in user
-const getMyNotifications = async (req, res) => {
-  try {
+const getMyNotifications = asyncHandler(async (req, res) => {
     // Find notifications where the user is the logged-in user.
     // Newest notifications are returned first.
     const notifications = await Notification.find({ user: req.user.id }).sort({
@@ -14,19 +14,10 @@ const getMyNotifications = async (req, res) => {
       data: notifications,
       message: "Notifications fetched",
     });
-  } catch (err) {
-    // If something goes wrong, return a server error.
-    res.status(500).json({
-      success: false,
-      data: null,
-      message: err.message,
-    });
-  }
-};
+})
 
 // Mark one notification as read
-const markAsRead = async (req, res) => {
-  try {
+const markAsRead = asyncHandler(async (req, res) => {
     // Find the notification by its ID.
     // The notification must also belong to the logged-in user.
     const notification = await Notification.findOneAndUpdate(
@@ -57,18 +48,11 @@ const markAsRead = async (req, res) => {
       data: notification,
       message: "Marked as read",
     });
-  } catch (err) {
-    res.status(500).json({
-      success: false,
-      data: null,
-      message: err.message,
-    });
-  }
-};
+  
+})
 
 // Mark all notifications of the logged-in user as read
-const markAllAsRead = async (req, res) => {
-  try {
+const markAllAsRead = asyncHandler(async (req, res) => {
     // Find all unread notifications belonging to this user
     // and change isRead from false to true.
     await Notification.updateMany(
@@ -86,14 +70,7 @@ const markAllAsRead = async (req, res) => {
       data: null,
       message: "All marked as read",
     });
-  } catch (err) {
-    res.status(500).json({
-      success: false,
-      data: null,
-      message: err.message,
-    });
-  }
-};
+})
 
 // Export the controller functions so the routes can use them.
 module.exports = {

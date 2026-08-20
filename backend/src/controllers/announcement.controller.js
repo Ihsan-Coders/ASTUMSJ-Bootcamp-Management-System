@@ -1,8 +1,7 @@
 const Announcement = require("../models/Announcement");
-
+const asyncHandler = require('../utils/asyncHandler');
 // Create a new announcement
-const createAnnouncement = async (req, res) => {
-  try {
+const createAnnouncement = asyncHandler(async (req, res) => {
     const announcement = await Announcement.create({
       ...req.body,
       createdBy: req.user.id,
@@ -13,18 +12,11 @@ const createAnnouncement = async (req, res) => {
       data: announcement,
       message: "Announcement created",
     });
-  } catch (err) {
-    res.status(500).json({
-      success: false,
-      data: null,
-      message: err.message,
-    });
-  }
-};
+  
+} )
 
 // Get published announcements
-const getAnnouncements = async (req, res) => {
-  try {
+const getAnnouncements = asyncHandler ( async (req, res) => {
     const { batchId } = req.query;
 
     const filter = {
@@ -44,18 +36,11 @@ const getAnnouncements = async (req, res) => {
       data: announcements,
       message: "Announcements fetched",
     });
-  } catch (err) {
-    res.status(500).json({
-      success: false,
-      data: null,
-      message: err.message,
-    });
-  }
-};
+  
+})
 
 // Update an announcement
-const updateAnnouncement = async (req, res) => {
-  try {
+const updateAnnouncement = asyncHandler( async (req, res) => {
     const announcement = await Announcement.findByIdAndUpdate(
       req.params.id,
       req.body,
@@ -67,18 +52,10 @@ const updateAnnouncement = async (req, res) => {
       data: announcement,
       message: "Announcement updated",
     });
-  } catch (err) {
-    res.status(500).json({
-      success: false,
-      data: null,
-      message: err.message,
-    });
-  }
-};
+})
 
 // Delete an announcement
-const deleteAnnouncement = async (req, res) => {
-  try {
+const deleteAnnouncement = asyncHandler(async (req, res) => {
     await Announcement.findByIdAndDelete(req.params.id);
 
     res.status(200).json({
@@ -86,15 +63,7 @@ const deleteAnnouncement = async (req, res) => {
       data: null,
       message: "Announcement deleted",
     });
-  } catch (err) {
-    res.status(500).json({
-      success: false,
-      data: null,
-      message: err.message,
-    });
-  }
-};
-
+})
 module.exports = {
   createAnnouncement,
   getAnnouncements,

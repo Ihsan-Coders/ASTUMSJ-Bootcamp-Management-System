@@ -1,6 +1,7 @@
 const AlumniProfile = require("../models/AlumniProfile");
-const createAlumniProfile = async (req, res) => {
-  try {
+const asyncHandler = require('../utils/asyncHandler');
+
+const createAlumniProfile = asyncHandler(async (req, res) => {
     const profile = await AlumniProfile.create(req.body);
     res
       .status(201)
@@ -9,12 +10,9 @@ const createAlumniProfile = async (req, res) => {
         data: profile,
         message: "Alumni profile created",
       });
-  } catch (err) {
-    res.status(500).json({ success: false, data: null, message: err.message });
-  }
-};
-const getPublicAlumni = async (req, res) => {
-  try {
+})
+
+const getPublicAlumni = asyncHandler(async (req, res) => {
     const alumni = await AlumniProfile.find({ isPublic: true }).populate(
       "student",
       "name",
@@ -22,8 +20,6 @@ const getPublicAlumni = async (req, res) => {
     res
       .status(200)
       .json({ success: true, data: alumni, message: "Alumni fetched" });
-  } catch (err) {
-    res.status(500).json({ success: false, data: null, message: err.message });
-  }
-};
+})
+
 module.exports = { createAlumniProfile, getPublicAlumni };

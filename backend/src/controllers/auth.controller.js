@@ -4,11 +4,11 @@ const {
   comparePassword,
 } = require('../utils/hashPassword');
 const generateToken = require('../utils/generateToken');
+const asyncHandler = require('../utils/asyncHandler');
 
 
 // POST /api/auth/register
-const register = async (req, res) => {
-  try {
+const register = asyncHandler(async (req, res) => {
     const { name, email, password } = req.body;
 
     if (!name || !email || !password) {
@@ -67,22 +67,10 @@ const register = async (req, res) => {
       },
       message: 'Registered successfully',
     });
-
-  } catch (error) {
-    console.error('Register error:', error);
-
-    return res.status(500).json({
-      success: false,
-      data: null,
-      message: 'Internal server error',
-    });
-  }
-};
-
+})
 
 // POST /api/auth/login
-const login = async (req, res) => {
-  try {
+const login = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
@@ -144,27 +132,17 @@ const login = async (req, res) => {
       },
       message: 'Logged in successfully',
     });
-
-  } catch (error) {
-    console.error('Login error:', error);
-
-    return res.status(500).json({
-      success: false,
-      data: null,
-      message: 'Internal server error',
-    });
-  }
-};
+})
 
 
 // POST /api/auth/logout
-const logout = async (req, res) => {
+const logout = asyncHandler(async (req, res) => {
   return res.status(200).json({
     success: true,
     data: null,
     message: 'Logged out successfully',
   });
-};
+})
 
 
 module.exports = {
