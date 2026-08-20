@@ -1,18 +1,23 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-
+import { useNavigate, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import DarkModeToggle from "./DarkModeToggle";
 import { useAuth } from "../../context/AuthContext";
 
-const LINKS = ["Home", "Tracks", "Mentors", "Announcements", "FAQ"];
+const LINKS = ["Home", "About", "Tracks", "Mentors", "FAQ", "Contact"];
 
 export default function Navbar({ minimal = false }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const isAuthPage =
+    location.pathname === "/login" || location.pathname === "/register";
+  const showMinimal = minimal || isAuthPage;
 
   const handleLogout = () => {
     logout();
@@ -22,7 +27,12 @@ export default function Navbar({ minimal = false }) {
 
   const handleLogin = () => {
     setMobileOpen(false);
-    navigate("/");
+    navigate("/login");
+  };
+
+  const handleGetStarted = () => {
+    setMobileOpen(false);
+    navigate("/register");
   };
 
   return (
@@ -35,13 +45,13 @@ export default function Navbar({ minimal = false }) {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
         {/* Logo */}
-        <div className="flex items-center gap-3 shrink-0">
+        <Link to="/" className="flex items-center gap-3 shrink-0">
           <div
             className="relative flex items-center justify-center w-11 h-11 p-1 rounded-full
-                       bg-gradient-to-br from-[#D4AF37]/30 to-[#10B981]/10
-                       border border-[#D4AF37]/40
-                       shadow-[0_0_15px_rgba(212,175,55,0.15)]
-                       overflow-hidden"
+                   bg-gradient-to-br from-[#D4AF37]/30 to-[#10B981]/10
+                   border border-[#D4AF37]/40
+                   shadow-[0_0_15px_rgba(212,175,55,0.15)]
+                   overflow-hidden"
           >
             <img
               src="/src/assets/astu-msj-logo.jpg"
@@ -52,14 +62,13 @@ export default function Navbar({ minimal = false }) {
               }}
             />
           </div>
-
           <span className="text-lg sm:text-xl font-bold tracking-wide text-text-primary font-[var(--font-display)]">
             ASTU <span className="text-gold">MSJ</span>
           </span>
-        </div>
+        </Link>
 
         {/* Full Navbar */}
-        {!minimal && (
+        {!showMinimal && (
           <>
             {/* Desktop Links */}
             <div className="hidden md:flex items-center gap-8 text-sm font-medium text-text-secondary">
@@ -104,7 +113,7 @@ export default function Navbar({ minimal = false }) {
                   </button>
 
                   <button
-                    onClick={handleLogin}
+                    onClick={handleGetStarted}
                     className="text-sm px-4 py-2 rounded-lg font-semibold text-obsidian
                                bg-gradient-to-r from-gold to-emerald
                                hover:shadow-[0_0_20px_rgba(212,175,55,0.4)]
@@ -128,7 +137,7 @@ export default function Navbar({ minimal = false }) {
         )}
 
         {/* Minimal Navbar */}
-        {minimal && (
+        {showMinimal && (
           <div className="flex items-center">
             <DarkModeToggle />
           </div>
@@ -136,7 +145,7 @@ export default function Navbar({ minimal = false }) {
       </div>
 
       {/* Mobile Menu */}
-      {!minimal && (
+      {!showMinimal && (
         <AnimatePresence>
           {mobileOpen && (
             <motion.div
@@ -185,7 +194,7 @@ export default function Navbar({ minimal = false }) {
                       </button>
 
                       <button
-                        onClick={handleLogin}
+                        onClick={handleGetStarted}
                         className="text-sm px-4 py-2 rounded-lg font-semibold text-obsidian
                                    bg-gradient-to-r from-gold to-emerald"
                       >

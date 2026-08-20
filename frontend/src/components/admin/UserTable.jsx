@@ -1,31 +1,35 @@
-import { useEffect, useState } from 'react';
-import Table from '../common/Table';
-import { getUsers, deleteUser } from '../../api/user.api';
+import { useEffect, useState } from "react";
+import Table from "../common/Table";
+import { getUsers, deleteUser } from "../../api/user.api";
 
-const ROLE_OPTIONS = ['all', 'admin', 'mentor', 'student'];
+const ROLE_OPTIONS = ["all", "admin", "mentor", "student"];
 
 export default function UserTable({ refreshKey }) {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [role, setRole] = useState('all');
-  const [search, setSearch] = useState('');
+  const [error, setError] = useState("");
+  const [role, setRole] = useState("all");
+  const [search, setSearch] = useState("");
 
   const fetchUsers = () => {
     const params = {};
-    if (role !== 'all') params.role = role;
+    if (role !== "all") params.role = role;
     if (search.trim()) params.search = search.trim();
     getUsers(params)
       .then((res) => {
         setUsers(res.data.data);
-        setError('');
+        setError("");
       })
-      .catch((err) => setError(err?.response?.data?.message || 'Failed to load users'))
+      .catch((err) =>
+        setError(err?.response?.data?.message || "Failed to load users"),
+      )
       .finally(() => setLoading(false));
   };
 
   // Refetch when a create happens upstream (refreshKey bump) or filters change
-  useEffect(() => { fetchUsers(); }, [refreshKey, role]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    fetchUsers();
+  }, [refreshKey, role]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -33,12 +37,12 @@ export default function UserTable({ refreshKey }) {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Delete this user? This cannot be undone.')) return;
+    if (!window.confirm("Delete this user? This cannot be undone.")) return;
     try {
       await deleteUser(id);
       fetchUsers();
     } catch (err) {
-      alert(err?.response?.data?.message || 'Failed to delete user');
+      alert(err?.response?.data?.message || "Failed to delete user");
     }
   };
 
@@ -62,7 +66,9 @@ export default function UserTable({ refreshKey }) {
             className="p-2 rounded border border-border bg-background text-text-primary text-sm"
           >
             {ROLE_OPTIONS.map((r) => (
-              <option key={r} value={r}>{r === 'all' ? 'All roles' : r}</option>
+              <option key={r} value={r}>
+                {r === "all" ? "All roles" : r}
+              </option>
             ))}
           </select>
         </div>
@@ -75,17 +81,17 @@ export default function UserTable({ refreshKey }) {
         data={users}
         emptyMessage="No users found"
         columns={[
-          { key: 'name', label: 'Name' },
-          { key: 'email', label: 'Email' },
-          { key: 'role', label: 'Role' },
+          { key: "name", label: "Name" },
+          { key: "email", label: "Email" },
+          { key: "role", label: "Role" },
           {
-            key: 'batch',
-            label: 'Batch',
-            render: (row) => row.batch?.name || '—',
+            key: "batch",
+            label: "Batch",
+            render: (row) => row.batch?.name || "—",
           },
           {
-            key: 'actions',
-            label: 'Actions',
+            key: "actions",
+            label: "Actions",
             render: (row) => (
               <button
                 onClick={() => handleDelete(row._id)}
