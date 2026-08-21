@@ -6,23 +6,43 @@ export default function RegisterForm() {
     name: "",
     email: "",
     password: "",
-    role: "student",
   });
+
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleChange = (e) =>
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value,
+    });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     setError("");
     setSuccess("");
+    setLoading(true);
+
     try {
       const res = await registerUser(form);
+
       setSuccess(res.data.message || "Registration submitted!");
+
+      // Clear form after successful registration
+      setForm({
+        name: "",
+        email: "",
+        password: "",
+      });
     } catch (err) {
-      setError(err.response?.data?.message || "Registration failed");
+      setError(
+        err.response?.data?.message || "Registration failed"
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -31,9 +51,21 @@ export default function RegisterForm() {
       onSubmit={handleSubmit}
       className="glass-card glow-border rounded-lg p-6 max-w-sm mx-auto"
     >
-      <h2 className="text-xl font-semibold text-text-primary mb-4">Register</h2>
-      {error && <p className="text-danger text-sm mb-3">{error}</p>}
-      {success && <p className="text-emerald text-sm mb-3">{success}</p>}
+      <h2 className="text-xl font-semibold text-text-primary mb-4">
+        Register
+      </h2>
+
+      {error && (
+        <p className="text-danger text-sm mb-3">
+          {error}
+        </p>
+      )}
+
+      {success && (
+        <p className="text-emerald text-sm mb-3">
+          {success}
+        </p>
+      )}
 
       <input
         type="text"
@@ -42,8 +74,10 @@ export default function RegisterForm() {
         value={form.name}
         onChange={handleChange}
         autoComplete="name"
+        required
         className="w-full p-2 mb-3 rounded border border-border bg-background text-text-primary"
       />
+
       <input
         type="email"
         name="email"
@@ -51,8 +85,10 @@ export default function RegisterForm() {
         value={form.email}
         onChange={handleChange}
         autoComplete="email"
+        required
         className="w-full p-2 mb-3 rounded border border-border bg-background text-text-primary"
       />
+
       <input
         type="password"
         name="password"
@@ -60,23 +96,16 @@ export default function RegisterForm() {
         value={form.password}
         onChange={handleChange}
         autoComplete="new-password"
-        className="w-full p-2 mb-3 rounded border border-border bg-background text-text-primary"
-      />
-      <select
-        name="role"
-        value={form.role}
-        onChange={handleChange}
+        required
         className="w-full p-2 mb-4 rounded border border-border bg-background text-text-primary"
-      >
-        <option value="student">Student</option>
-        <option value="mentor">Mentor</option>
-      </select>
+      />
 
       <button
         type="submit"
-        className="w-full py-2 rounded font-semibold text-obsidian bg-gradient-to-r from-gold to-emerald hover:shadow-[0_0_20px_rgba(212,175,55,0.35)] transition-shadow"
+        disabled={loading}
+        className="w-full py-2 rounded font-semibold text-obsidian bg-gradient-to-r from-gold to-emerald hover:shadow-[0_0_20px_rgba(212,175,55,0.35)] transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        Register
+        {loading ? "Registering..." : "Register"}
       </button>
     </form>
   );
