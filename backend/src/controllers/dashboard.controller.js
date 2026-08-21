@@ -61,12 +61,9 @@ const getAdminDashboard = async (req, res) => {
       },
       message: "Admin dashboard data fetched",
     });
-  } catch (err) {
-    res.status(500).json({ success: false, data: null, message: err.message });
-  }
-};
-const getMentorDashboard = async (req, res) => {
-  try {
+})
+const getMentorDashboard = asyncHandler(async (req, res) => {
+ 
     const mentorId = req.user.id;
 
     // ==========================================

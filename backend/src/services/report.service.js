@@ -3,54 +3,57 @@ const Batch = require("../models/Batch");
 const Attendance = require("../models/Attendance");
 const Submission = require("../models/Submission");
 
-// Generate analytics for every batch on the platform.
-const generatePlatformReport = async () => {
-  // Get all batches.
-  const batches = await Batch.find();
+// PDFKit allows us to create PDF documents on the backend.
+const PDFDocument = require("pdfkit");
 
-  // Generate a report for each batch.
-  const batchReports = await Promise.all(
-    batches.map(async (batch) => {
-      // Find all students belonging to this batch.
-      const students = await User.find({
-        _id: { $in: batch.students },
-      });
+// Create a PDF document from the report data.
+const generatePDFReport = (reportData) => {
+  // Create a new PDF document.
+  // margin: 50 gives the PDF some space around the edges.
+  const doc = new PDFDocument({
+    margin: 50,
+  });
 
-      // Find attendance records belonging to this batch.
-      const attendance = await Attendance.find({
-        batch: batch._id,
-      });
+  // Add the report title.
+  doc.fontSize(20).text("ASTU MSJ Bootcamp — Platform Report", {
+    align: "center",
+  });
 
-      // Count students/records marked Present.
-      const present = attendance.filter((a) => a.status === "Present").length;
+  // Add some vertical space.
+  doc.moveDown();
 
-      // Only Present, Absent and Late records
-      // are included in the attendance calculation.
-      const applicable = attendance.filter((a) =>
-        ["Present", "Absent", "Late"].includes(a.status),
-      ).length;
+  // Add the date/time when the report was generated.
+  doc
+    .fontSize(10)
+    .fillColor("gray")
+    .text(`Generated: ${new Date(reportData.generatedAt).toLocaleString()}`, {
+      align: "center",
+    });
 
-      // Calculate attendance rate for this batch.
-      const attendanceRate =
-        applicable > 0 ? Math.round((present / applicable) * 100) : 0;
+  // Add more vertical space before the batch reports.
+  doc.moveDown(2);
 
-      // Return the information needed by the report.
-      return {
-        batchName: batch.name,
-        studentCount: students.length,
-        attendanceRate,
-      };
-    }),
-  );
+  // Go through every batch report.
+  reportData.batchReports.forEach((b) => {
+    // Display the batch name.
+    doc.fontSize(14).fillColor("black").text(b.batchName);
 
-  // Return the complete platform report.
-  return {
-    generatedAt: new Date(),
-    batchReports,
-  };
+    // Display the number of students.
+    doc.fontSize(11).text(`Students: ${b.studentCount}`);
+
+    // Display the attendance percentage.
+    doc.text(`Attendance Rate: ${b.attendanceRate}%`);
+
+    // Add some space before the next batch.
+    doc.moveDown();
+  });
+
+  // Return the PDF document.
+  return doc;
 };
 
-// Export the service so the controller can use it.
+// Export both report functions so controllers can use them.
 module.exports = {
   generatePlatformReport,
+  generatePDFReport,
 };

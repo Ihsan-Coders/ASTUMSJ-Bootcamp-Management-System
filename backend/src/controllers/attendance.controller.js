@@ -1,10 +1,8 @@
 const Attendance = require("../models/Attendance");
-const {
-  calculateAttendancePercentage,
-} = require("../services/attendance.service");
+const {calculateAttendancePercentage} = require("../services/attendance.service");
+const asyncHandler = require('../utils/asyncHandler');
 
-const markAttendance = async (req, res) => {
-  try {
+const markAttendance = asyncHandler(async (req, res) => {
     const { student, batch, date, status } = req.body;
     const record = await Attendance.create({
       student,
@@ -16,13 +14,10 @@ const markAttendance = async (req, res) => {
     res
       .status(201)
       .json({ success: true, data: record, message: "Attendance marked" });
-  } catch (err) {
-    res.status(500).json({ success: false, data: null, message: err.message });
-  }
-};
+  
+})
 
-const updateAttendance = async (req, res) => {
-  try {
+const updateAttendance = asyncHandler(async (req, res) => {
     const record = await Attendance.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
     });
@@ -33,13 +28,9 @@ const updateAttendance = async (req, res) => {
     res
       .status(200)
       .json({ success: true, data: record, message: "Attendance updated" });
-  } catch (err) {
-    res.status(500).json({ success: false, data: null, message: err.message });
-  }
-};
+})
 
-const getAttendanceHistory = async (req, res) => {
-  try {
+const getAttendanceHistory = asyncHandler(async (req, res) => {
     const { studentId, batchId } = req.query;
     const filter = {};
     if (studentId) filter.student = studentId;
@@ -55,9 +46,6 @@ const getAttendanceHistory = async (req, res) => {
         data: { records, percentage },
         message: "Attendance fetched",
       });
-  } catch (err) {
-    res.status(500).json({ success: false, data: null, message: err.message });
-  }
-};
+})
 
 module.exports = { markAttendance, updateAttendance, getAttendanceHistory };

@@ -1,16 +1,14 @@
 const Submission = require("../models/Submission");
 const Assignment = require("../models/Assignment");
-const {
-  validateScore,
-  determineGradeLabel,
-} = require("../services/grading.service");
+const {validateScore,determineGradeLabel,} = require("../services/grading.service");
 const { createNotification } = require("../services/notification.service");
 const {
   checkTopScorer,
   checkFastSubmitter,
 } = require("../services/badge.service");
-const createSubmission = async (req, res) => {
-  try {
+const asyncHandler = require('../utils/asyncHandler');
+
+const createSubmission = asyncHandler(async (req, res) => {
     const { assignment, githubUrl, liveDemoUrl, notes } = req.body;
 
     const attachments = req.files
@@ -33,12 +31,9 @@ const createSubmission = async (req, res) => {
     res
       .status(201)
       .json({ success: true, data: submission, message: "Submission created" });
-  } catch (err) {
-    res.status(500).json({ success: false, data: null, message: err.message });
-  }
-};
-const gradeSubmission = async (req, res) => {
-  try {
+})
+
+const gradeSubmission = asyncHandler(async (req, res) => {
     const { score, feedback, status } = req.body;
     const submission = await Submission.findById(req.params.id).populate(
       "assignment",
@@ -79,13 +74,9 @@ const gradeSubmission = async (req, res) => {
     res
       .status(200)
       .json({ success: true, data: submission, message: "Submission graded" });
-  } catch (err) {
-    res.status(500).json({ success: false, data: null, message: err.message });
-  }
-};
+})
 
-const getSubmissions = async (req, res) => {
-  try {
+const getSubmissions = asyncHandler(async (req, res) => {
     const { assignmentId, studentId } = req.query;
     const filter = {};
     if (assignmentId) filter.assignment = assignmentId;
@@ -100,9 +91,7 @@ const getSubmissions = async (req, res) => {
       data: submissions,
       message: "Submissions fetched",
     });
-  } catch (err) {
-    res.status(500).json({ success: false, data: null, message: err.message });
-  }
-};
+
+})
 
 module.exports = { createSubmission, gradeSubmission, getSubmissions };

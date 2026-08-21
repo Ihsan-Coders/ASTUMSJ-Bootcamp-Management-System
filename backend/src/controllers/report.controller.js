@@ -22,8 +22,8 @@ const getReport = async (req, res) => {
     });
   }
 };
-
-// Export the controller.
+// Export both report controllers.
 module.exports = {
   getReport,
+  downloadReportPDF,
 };

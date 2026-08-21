@@ -1,8 +1,8 @@
 const Progress = require('../models/Progress');
+const asyncHandler = require('../utils/asyncHandler');
 
 // Update or create student progress
-const updateProgress = async (req, res) => {
-  try {
+const updateProgress = asyncHandler(async (req, res) => {
     const { student, batch, topic, status, notes } = req.body;
 
     const progress = await Progress.findOneAndUpdate(
@@ -24,19 +24,11 @@ const updateProgress = async (req, res) => {
       data: progress,
       message: 'Progress updated'
     });
-  } catch (err) {
-    res.status(500).json({
-      success: false,
-      data: null,
-      message: err.message
-    });
-  }
-};
+})
 
 
 // Get student progress with optional filters
-const getProgress = async (req, res) => {
-  try {
+const getProgress = asyncHandler(async (req, res) => {
     const { studentId, batchId } = req.query;
 
     const filter = {};
@@ -51,19 +43,11 @@ const getProgress = async (req, res) => {
       data: records,
       message: 'Progress fetched'
     });
-  } catch (err) {
-    res.status(500).json({
-      success: false,
-      data: null,
-      message: err.message
-    });
-  }
-};
+})
 
 
 // Calculate a student's progress summary and percentage
-const getProgressSummary = async (req, res) => {
-  try {
+const getProgressSummary = asyncHandler(async (req, res) => {
     const { studentId } = req.params;
 
     const records = await Progress.find({
@@ -106,14 +90,7 @@ const getProgressSummary = async (req, res) => {
       },
       message: 'Progress summary fetched'
     });
-  } catch (err) {
-    res.status(500).json({
-      success: false,
-      data: null,
-      message: err.message
-    });
-  }
-};
+})
 
 
 module.exports = {
