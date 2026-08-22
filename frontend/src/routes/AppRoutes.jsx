@@ -8,10 +8,12 @@ import HomeRoute from "./HomeRoute";
 import AdminDashboard from "../pages/admin/AdminDashboard";
 import ManageUsers from "../pages/admin/ManageUsers";
 import ManageBatches from "../pages/admin/ManageBatches";
-import ReportsPage from "../pages/admin/ReportsPage"
+import ReportsPage from "../pages/admin/ReportsPage";
 
 import MentorDashboard from "../pages/mentor/MentorDashboard";
-import AttendancePage from "../pages/mentor/AttendancePage";
+// import AttendancePage from "../pages/mentor/AttendancePage";
+import MentorAttendancePage from "../pages/mentor/MentorAttendancePage"; // real mentor mark-attendance page
+// import StudentAttendancePage from '../pages/mentor/AttendancePage'; // misplaced file, actually shows a student's own attendance
 import AssignmentsPage from "../pages/mentor/AssignmentsPage";
 
 import StudentDashboard from "../pages/student/StudentDashboard";
@@ -58,14 +60,14 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       />
-       <Route
+      <Route
         path="/admin/reports"
         element={
           <ProtectedRoute allowedRoles={["admin"]}>
             <ReportsPage />
           </ProtectedRoute>
         }
-      /> 
+      />
 
       <Route
         path="/mentor"
@@ -79,18 +81,18 @@ export default function AppRoutes() {
         path="/mentor/attendance"
         element={
           <ProtectedRoute allowedRoles={["mentor"]}>
-            <AttendancePage />
+            <MentorAttendancePage />
           </ProtectedRoute>
         }
       />
-       <Route
+      <Route
         path="/mentor/assignments"
         element={
           <ProtectedRoute allowedRoles={["mentor"]}>
             <AssignmentsPage />
           </ProtectedRoute>
         }
-      /> 
+      />
 
       <Route
         path="/student"
@@ -100,22 +102,22 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       />
-       <Route
+      <Route
         path="/student/attendance"
         element={
           <ProtectedRoute allowedRoles={["student"]}>
             <MyAttendance />
           </ProtectedRoute>
         }
-      /> 
-       <Route
+      />
+      <Route
         path="/student/progress"
         element={
           <ProtectedRoute allowedRoles={["student"]}>
             <MyProgress />
           </ProtectedRoute>
         }
-      /> 
+      />
       <Route
         path="/student/timeline"
         element={
@@ -123,7 +125,7 @@ export default function AppRoutes() {
             <MyTimeline />
           </ProtectedRoute>
         }
-      /> 
+      />
       {/* <Route
         path="/profile"
         element={

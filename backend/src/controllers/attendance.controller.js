@@ -1,51 +1,98 @@
 const Attendance = require("../models/Attendance");
-const {calculateAttendancePercentage} = require("../services/attendance.service");
-const asyncHandler = require('../utils/asyncHandler');
+const {
+  calculateAttendancePercentage,
+} = require("../services/attendance.service");
+const asyncHandler = require("../utils/asyncHandler");
 
 const markAttendance = asyncHandler(async (req, res) => {
-    const { student, batch, date, status } = req.body;
-    const record = await Attendance.create({
-      student,
-      batch,
-      date,
-      status,
-      markedBy: req.user.id,
-    });
-    res
-      .status(201)
-      .json({ success: true, data: record, message: "Attendance marked" });
-  
-})
+  const { student, batch, date, status } = req.body;
+
+  const record = await Attendance.create({
+    student,
+    batch,
+    date,
+    status,
+    markedBy: req.user.id,
+  });
+
+  res.status(201).json({
+    success: true,
+    data: record,
+    message: "Attendance marked",
+  });
+});
 
 const updateAttendance = asyncHandler(async (req, res) => {
-    const record = await Attendance.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
+  const record = await Attendance.findByIdAndUpdate(req.params.id, req.body, {
+    new: true,
+    runValidators: true,
+  });
+
+  if (!record) {
+    return res.status(404).json({
+      success: false,
+      data: null,
+      message: "Record not found",
     });
-    if (!record)
-      return res
-        .status(404)
-        .json({ success: false, data: null, message: "Record not found" });
-    res
-      .status(200)
-      .json({ success: true, data: record, message: "Attendance updated" });
-})
+  }
+
+  res.status(200).json({
+    success: true,
+    data: record,
+    message: "Attendance updated",
+  });
+});
 
 const getAttendanceHistory = asyncHandler(async (req, res) => {
-    const { studentId, batchId } = req.query;
-    const filter = {};
-    if (studentId) filter.student = studentId;
-    if (batchId) filter.batch = batchId;
+  const { studentId, batchId } = req.query;
 
-    const records = await Attendance.find(filter).sort({ date: -1 });
-    const percentage = calculateAttendancePercentage(records);
+  const filter = {};
 
-    res
-      .status(200)
-      .json({
-        success: true,
-        data: { records, percentage },
-        message: "Attendance fetched",
-      });
-})
+  if (studentId) {
+    filter.student = studentId;
+  }
 
-module.exports = { markAttendance, updateAttendance, getAttendanceHistory };
+  if (batchId) {
+    filter.batch = batchId;
+  }
+
+  const records = await Attendance.find(filter).sort({
+    date: -1,
+  });
+
+  const percentage = calculateAttendancePercentage(records);
+
+  res.status(200).json({
+    success: true,
+    data: {
+      records,
+      percentage,
+    },
+    message: "Attendance fetched",
+  });
+});
+
+const deleteAttendance = asyncHandler(async (req, res) => {
+  const record = await Attendance.findByIdAndDelete(req.params.id);
+
+  if (!record) {
+    return res.status(404).json({
+      success: false,
+      data: null,
+      message: "Record not found",
+    });
+  }
+
+  res.status(200).json({
+    success: true,
+    data: record,
+    message: "Attendance deleted",
+  });
+});
+
+module.exports = {
+  markAttendance,
+  updateAttendance,
+  getAttendanceHistory,
+  deleteAttendance,
+};
