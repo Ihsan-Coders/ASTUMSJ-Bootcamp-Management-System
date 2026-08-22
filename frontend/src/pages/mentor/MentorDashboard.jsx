@@ -1,42 +1,37 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import {
   Users,
   ClipboardCheck,
   AlertTriangle,
   Clock,
-  CheckCircle2,
-  XCircle,
-  ExternalLink,
+  ArrowRight,
 } from "lucide-react";
-
 import StatCard from "../../components/common/StatCard";
 import { getMentorDashboard } from "../../api/dashboard.api";
 
-const STATUS_COLOR = {
-  Present:
-    "bg-emerald/15 text-emerald",
+const FALLBACK_STUDENTS = [
+  { id: 1, name: "Bethelhem Assefa", attendancePercentage: 94, atRisk: false },
+  { id: 2, name: "Dawit Alemu", attendancePercentage: 42, atRisk: true },
+  { id: 3, name: "Selam Tesfaye", attendancePercentage: 88, atRisk: false },
+  { id: 4, name: "Yonas Kebede", attendancePercentage: 35, atRisk: true },
+];
 
-  Absent:
-    "bg-danger/15 text-danger",
-
-  Late:
-    "bg-warning/15 text-warning",
-
-  "No Records":
-    "bg-text-secondary/15 text-text-secondary",
-};
-
-/**
- * Convert attendance percentage
- * into a readable attendance status.
- */
-const getAttendanceStatus = (
-  attendancePercentage,
-) => {
-  if (attendancePercentage >= 90) {
-    return "Present";
-  }
+const FALLBACK_GRADING_QUEUE = [
+  {
+    id: 1,
+    student: "Bethelhem Assefa",
+    assignment: "React Todo App",
+    submitted: "2 days ago",
+  },
+  {
+    id: 2,
+    student: "Selam Tesfaye",
+    assignment: "Express REST API",
+    submitted: "5 hours ago",
+  },
+];
 
   if (attendancePercentage >= 75) {
     return "Late";
@@ -63,172 +58,31 @@ const formatSubmittedTime = (
     submittedAt,
   );
 
-  if (Number.isNaN(date.getTime())) {
-    return "Unknown";
-  }
-
-  return date.toLocaleString();
-};
-
-export default function MentorDashboard() {
-  const [students, setStudents] =
-    useState([]);
-
-  const [gradingQueue, setGradingQueue] =
-    useState([]);
-
-  const [
-    pendingGradingCount,
-    setPendingGradingCount,
-  ] = useState(0);
-
-  const [loading, setLoading] =
-    useState(true);
-
-  const [error, setError] =
-    useState("");
-
-  /**
-   * Load real dashboard data
-   */
-  const loadDashboard = async () => {
-    try {
-      setLoading(true);
-      setError("");
-
-      const response =
-        await getMentorDashboard();
-
-      const data =
-        response?.data?.data;
-
-      if (!data) {
-        throw new Error(
-          "Invalid dashboard response.",
+  useEffect(() => {
+    getMentorDashboard()
+      .then((res) => {
+        const data = res.data.data;
+        if (data.studentStats) {
+          setStudents(
+            data.studentStats.map((s, i) => ({
+              id: s.student.id || i,
+              name: s.student.name,
+              attendancePercentage: s.attendancePercentage,
+              atRisk: s.isAtRisk,
+            })),
+          );
+        }
+        setPendingGradingCount(
+          data.pendingGradingCount ?? FALLBACK_GRADING_QUEUE.length,
         );
       }
 
-      /**
-       * Real students
-       */
-      setStudents(
-        Array.isArray(
-          data.studentStats,
-        )
-          ? data.studentStats.map(
-              (studentStat) => ({
-                id:
-                  studentStat.student
-                    ?.id,
-
-                name:
-                  studentStat.student
-                    ?.name ||
-                  "Unknown Student",
-
-                email:
-                  studentStat.student
-                    ?.email ||
-                  "",
-
-                progress:
-                  studentStat
-                    .progressPercentage ??
-                  0,
-
-                completedTopics:
-                  studentStat
-                    .completedTopics ??
-                  0,
-
-                totalTopics:
-                  studentStat
-                    .totalTopics ??
-                  0,
-
-                attendance:
-                  studentStat
-                    .attendancePercentage ??
-                  0,
-
-                atRisk:
-                  Boolean(
-                    studentStat.isAtRisk,
-                  ),
-
-                riskReasons:
-                  Array.isArray(
-                    studentStat.riskReasons,
-                  )
-                    ? studentStat.riskReasons
-                    : [],
-              }),
-            )
-          : [],
-      );
-
-      /**
-       * Real pending grading queue
-       */
-      setGradingQueue(
-        Array.isArray(
-          data.pendingGradingQueue,
-        )
-          ? data.pendingGradingQueue
-          : [],
-      );
-
-      /**
-       * Real pending grading count
-       */
-      setPendingGradingCount(
-        data.pendingGradingCount ?? 0,
-      );
-    } catch (err) {
-      console.error(
-        "Failed to load mentor dashboard:",
-        err,
-      );
-
-      setError(
-        err.response?.data?.message ||
-          err.message ||
-          "Failed to load mentor dashboard.",
-      );
-
-      setStudents([]);
-      setGradingQueue([]);
-      setPendingGradingCount(0);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    loadDashboard();
-  }, []);
-
-  /**
-   * Calculate number of at-risk students
-   */
-  const atRiskCount =
-    students.filter(
-      (student) => student.atRisk,
-    ).length;
-
-  /**
-   * Calculate average progress
-   */
-  const avgProgress =
+  const atRiskCount = students.filter((s) => s.atRisk).length;
+  const avgAttendance =
     students.length > 0
       ? Math.round(
-          students.reduce(
-            (total, student) =>
-              total +
-              student.progress,
-            0,
-          ) / students.length,
+          students.reduce((a, s) => a + s.attendancePercentage, 0) /
+            students.length,
         )
       : 0;
 
@@ -259,30 +113,47 @@ export default function MentorDashboard() {
         )}
       </div>
 
-      {/* =========================
-          ERROR
-      ========================= */}
-      {error && (
-        <div className="mb-6 rounded-xl border border-danger/30 bg-danger/10 p-4">
-          <div className="flex items-start gap-3">
-            <XCircle
-              size={18}
-              className="text-danger shrink-0 mt-0.5"
-            />
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+        <StatCard
+          label="Assigned Students"
+          value={students.length}
+          icon={Users}
+        />
+        <StatCard
+          label="Pending Grading"
+          value={pendingGradingCount}
+          icon={ClipboardCheck}
+        />
+        <StatCard
+          label="At-Risk Students"
+          value={atRiskCount}
+          icon={AlertTriangle}
+        />
+        <StatCard
+          label="Avg. Attendance"
+          value={`${avgAttendance}%`}
+          icon={Clock}
+        />
+      </div>
 
-            <div>
-              <p className="text-danger font-semibold text-sm">
-                Failed to load dashboard
-              </p>
-
-              <p className="text-text-secondary text-sm mt-1">
-                {error}
-              </p>
-
-              <button
-                type="button"
-                onClick={loadDashboard}
-                className="mt-3 text-xs px-3 py-1.5 rounded-lg border border-danger/30 text-danger hover:bg-danger/10"
+      <div className="grid lg:grid-cols-2 gap-6">
+        <div className="glass-card glow-border rounded-xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-text-primary font-semibold">
+              Assigned Students
+            </h2>
+            <Link
+              to="/mentor/attendance"
+              className="text-xs text-gold hover:underline flex items-center gap-1"
+            >
+              Mark Attendance <ArrowRight size={12} />
+            </Link>
+          </div>
+          <div className="space-y-3">
+            {students.map((s) => (
+              <div
+                key={s.id}
+                className="flex items-center justify-between border-b border-border/50 last:border-0 pb-3 last:pb-0"
               >
                 Try Again
               </button>
@@ -512,20 +383,14 @@ export default function MentorDashboard() {
                     },
                   )}
                 </div>
-              )}
-            </div>
-
-            {/* =========================
-                PENDING GRADING QUEUE
-            ========================= */}
-            <div className="glass-card glow-border rounded-xl p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-text-primary font-semibold">
-                  Pending Grading Queue
-                </h2>
-
-                <span className="text-xs px-2 py-1 rounded-full bg-warning/15 text-warning">
-                  {pendingGradingCount} pending
+                <span
+                  className={`text-xs px-2.5 py-1 rounded-full shrink-0 ${
+                    s.attendancePercentage >= 75
+                      ? "bg-emerald/15 text-emerald"
+                      : "bg-danger/15 text-danger"
+                  }`}
+                >
+                  {s.attendancePercentage}% attendance
                 </span>
               </div>
 

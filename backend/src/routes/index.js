@@ -12,6 +12,11 @@ const submissionRoutes = require("./submission.routes");
 const leaderboardRoutes = require("./leaderboard.routes");
 const progressRoutes = require("./progress.routes");
 
+router.use("/attendance", require("./attendance.routes"));
+router.use("/progress", require("./progress.routes"));
+router.use("/calendar", require("./calendar.routes"));
+router.use("/notifications", require("./notification.routes"));
+router.use("/reports", require("./report.routes"));
 router.use("/mentor-notes", require("./mentorNote.routes"));
 router.use("/badges", require("./badge.routes"));
 
