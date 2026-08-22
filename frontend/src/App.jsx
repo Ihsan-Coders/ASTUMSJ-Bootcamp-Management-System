@@ -1,5 +1,4 @@
 import Navbar from "./components/common/Navbar";
-import BottomNav from "./components/common/BottomNav";
 import GirihBackground from "./components/common/GirihBackground";
 import Footer from "./components/common/Footer";
 import AppRoutes from "./routes/AppRoutes";
@@ -13,7 +12,6 @@ function App() {
         <AppRoutes />
       </main>
       <Footer />
-      <BottomNav />
     </div>
   );
 }

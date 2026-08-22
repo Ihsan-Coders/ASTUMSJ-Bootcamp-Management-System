@@ -1,5 +1,10 @@
 const validateScore = (score, maxScore) => {
-  if (score < 0 || score > maxScore) {
+  if (
+    typeof score !== "number" ||
+    Number.isNaN(score) ||
+    score < 0 ||
+    score > maxScore
+  ) {
     const error = new Error(
       `Score must be between 0 and ${maxScore}`
     );
