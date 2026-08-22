@@ -15,14 +15,14 @@ const assignmentSchema = new mongoose.Schema(
 
     instructions: {
       type: String,
-      required: true,
+      required: false,
       trim: true,
     },
 
     batch: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Batch",
-      required: true,
+      required:false,
       index: true,
     },
 
@@ -45,6 +45,7 @@ const assignmentSchema = new mongoose.Schema(
       index: true,
     },
   },
+  
   {
     timestamps: true,
   },

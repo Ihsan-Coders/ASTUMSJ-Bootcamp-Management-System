@@ -8,9 +8,6 @@ const Batch = require("../models/Batch");
 const Assignment = require("../models/Assignment");
 const asyncHandler = require("../utils/asyncHandler");
 
-// ==========================================
-// ADMIN DASHBOARD
-// ==========================================
 const getAdminDashboard = asyncHandler(async (req, res) => {
   const [studentCount, mentorCount, batchCount, pendingCount] =
     await Promise.all([
@@ -20,7 +17,6 @@ const getAdminDashboard = asyncHandler(async (req, res) => {
       User.countDocuments({ role: "student", isActive: false }),
     ]);
 
-  // Overall attendance rate
   const attendanceRecords = await Attendance.find();
 
   const presentCount = attendanceRecords.filter(
@@ -36,7 +32,7 @@ const getAdminDashboard = asyncHandler(async (req, res) => {
       ? Math.round((presentCount / applicableCount) * 100)
       : 0;
 
-  // Assignment stats
+  
   const totalAssignments = await Assignment.countDocuments();
   const totalSubmissions = await Submission.countDocuments();
 
@@ -44,7 +40,7 @@ const getAdminDashboard = asyncHandler(async (req, res) => {
     status: "Graded",
   });
 
-  // Recent activity
+  
   const recentActivity = await Submission.find()
     .sort({ createdAt: -1 })
     .limit(10)
@@ -68,18 +64,14 @@ const getAdminDashboard = asyncHandler(async (req, res) => {
   });
 });
 
-// ==========================================
-// MENTOR DASHBOARD
-// ==========================================
 const getMentorDashboard = asyncHandler(async (req, res) => {
   const mentorId = req.user.id;
 
-  // 1. Find batches assigned to this mentor
+
   const batches = await Batch.find({
     mentors: mentorId,
   }).populate("students", "name email");
 
-  // 2. Get all students from assigned batches
   const studentsMap = new Map();
 
   batches.forEach((batch) => {
@@ -91,19 +83,17 @@ const getMentorDashboard = asyncHandler(async (req, res) => {
   const students = Array.from(studentsMap.values());
   const allStudentIds = students.map((student) => student._id);
 
-  // 3. Get attendance records
   const attendanceRecords = await Attendance.find({
     student: { $in: allStudentIds },
   });
 
-  // 4. Create student statistics
+
   const studentStats = await Promise.all(
     students.map(async (student) => {
       const records = attendanceRecords.filter(
         (record) => String(record.student) === String(student._id),
       );
 
-      // Attendance
       const present = records.filter(
         (record) => record.status === "Present",
       ).length;
@@ -117,7 +107,6 @@ const getMentorDashboard = asyncHandler(async (req, res) => {
           ? Math.round((present / applicable) * 100)
           : 100;
 
-      // Progress
       const progressRecords = await Progress.find({
         student: student._id,
       });
@@ -126,7 +115,6 @@ const getMentorDashboard = asyncHandler(async (req, res) => {
         (progress) => progress.status === "Completed",
       ).length;
 
-      // Risk reasons
       const riskReasons = [];
 
       if (attendancePercentage < 75) {
@@ -153,12 +141,11 @@ const getMentorDashboard = asyncHandler(async (req, res) => {
     }),
   );
 
-  // 5. Find at-risk students
   const atRiskStudents = studentStats.filter(
     (student) => student.isAtRisk,
   );
 
-  // 6. Overall attendance
+
   const totalPresent = attendanceRecords.filter(
     (record) => record.status === "Present",
   ).length;
@@ -172,18 +159,16 @@ const getMentorDashboard = asyncHandler(async (req, res) => {
       ? Math.round((totalPresent / totalApplicable) * 100)
       : 0;
 
-  // 7. Total completed topics
+
   const totalCompletedTopics = studentStats.reduce(
     (total, student) => total + student.completedTopics,
     0,
   );
 
-  // 8. Find mentor's assignments
   const assignments = await Assignment.find({
     createdBy: mentorId,
   });
 
-  // 9. Count pending submissions
   const pendingSubmissions = await Submission.countDocuments({
     assignment: {
       $in: assignments.map((assignment) => assignment._id),
@@ -191,7 +176,7 @@ const getMentorDashboard = asyncHandler(async (req, res) => {
     status: "Submitted",
   });
 
-  // 10. Send dashboard response
+
   res.status(200).json({
     success: true,
     data: {
@@ -207,13 +192,9 @@ const getMentorDashboard = asyncHandler(async (req, res) => {
   });
 });
 
-// ==========================================
-// STUDENT DASHBOARD
-// ==========================================
 const getStudentDashboard = asyncHandler(async (req, res) => {
   const studentId = req.user.id;
 
-  // Attendance
   const attendanceRecords = await Attendance.find({
     student: studentId,
   });
@@ -266,14 +247,12 @@ const getStudentDashboard = asyncHandler(async (req, res) => {
     .sort({ publishDate: -1 })
     .limit(5);
 
-  // Upcoming assignment deadlines
-  const upcomingDeadlines = await CalendarEvent.find({
-    type: "AssignmentDeadline",
-    date: { $gte: new Date() },
-  })
-    .sort({ date: 1 })
-    .limit(5);
-
+const upcomingAssignments = await Assignment.find({
+  deadline: { $gte: new Date() },
+})
+  .sort({ deadline: 1 })
+  .limit(5);
+  
   res.status(200).json({
     success: true,
     data: {
@@ -282,7 +261,7 @@ const getStudentDashboard = asyncHandler(async (req, res) => {
       averageGrade,
       assignmentCount: submissions.length,
       recentAnnouncements,
-      upcomingDeadlines,
+      upcomingAssignments,
     },
     message: "Student dashboard data fetched",
   });

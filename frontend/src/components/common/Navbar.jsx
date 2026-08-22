@@ -1,12 +1,40 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import DarkModeToggle from "./DarkModeToggle";
 import { useAuth } from "../../context/AuthContext";
 
-const LINKS = ["Home", "About", "Tracks", "Mentors", "FAQ", "Contact"];
+const PUBLIC_LINKS = [
+  { label: "Home", href: "#home" },
+  { label: "About", href: "#about" },
+  { label: "Tracks", href: "#tracks" },
+  { label: "Mentors", href: "#mentors" },
+  { label: "FAQ", href: "#faq" },
+  { label: "Contact", href: "#contact" },
+];
+
+const ROLE_LINKS = {
+  admin: [
+    { label: "Dashboard", path: "/admin" },
+    { label: "Users", path: "/admin/users" },
+    { label: "Batches", path: "/admin/batches" },
+    { label: "Reports", path: "/admin/reports" },
+  ],
+
+  mentor: [
+    { label: "Dashboard", path: "/mentor" },
+    { label: "Attendance", path: "/mentor/attendance" },
+    { label: "Assignments", path: "/mentor/assignments" },
+  ],
+
+  student: [
+    { label: "Dashboard", path: "/student" },
+    { label: "Attendance", path: "/student/attendance" },
+    { label: "Progress", path: "/student/progress" },
+    { label: "Timeline", path: "/student/timeline" },
+  ],
+};
 
 export default function Navbar({ minimal = false }) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -17,7 +45,10 @@ export default function Navbar({ minimal = false }) {
 
   const isAuthPage =
     location.pathname === "/login" || location.pathname === "/register";
+
   const showMinimal = minimal || isAuthPage;
+
+  const roleLinks = user ? ROLE_LINKS[user.role] || [] : [];
 
   const handleLogout = () => {
     logout();
@@ -35,6 +66,11 @@ export default function Navbar({ minimal = false }) {
     navigate("/register");
   };
 
+  const handleNavigation = (path) => {
+    setMobileOpen(false);
+    navigate(path);
+  };
+
   return (
     <motion.nav
       initial={{ y: -20, opacity: 0 }}
@@ -48,10 +84,10 @@ export default function Navbar({ minimal = false }) {
         <Link to="/" className="flex items-center gap-3 shrink-0">
           <div
             className="relative flex items-center justify-center w-11 h-11 p-1 rounded-full
-                   bg-gradient-to-br from-[#D4AF37]/30 to-[#10B981]/10
-                   border border-[#D4AF37]/40
-                   shadow-[0_0_15px_rgba(212,175,55,0.15)]
-                   overflow-hidden"
+                       bg-gradient-to-br from-[#D4AF37]/30 to-[#10B981]/10
+                       border border-[#D4AF37]/40
+                       shadow-[0_0_15px_rgba(212,175,55,0.15)]
+                       overflow-hidden"
           >
             <img
               src="/src/assets/astu-msj-logo.jpg"
@@ -62,25 +98,41 @@ export default function Navbar({ minimal = false }) {
               }}
             />
           </div>
+
           <span className="text-lg sm:text-xl font-bold tracking-wide text-text-primary font-[var(--font-display)]">
             ASTU <span className="text-gold">MSJ</span>
           </span>
         </Link>
 
-        {/* Full Navbar */}
         {!showMinimal && (
           <>
-            {/* Desktop Links */}
-            <div className="hidden md:flex items-center gap-8 text-sm font-medium text-text-secondary">
-              {LINKS.map((link) => (
-                <a
-                  key={link}
-                  href={`#${link.toLowerCase()}`}
-                  className="hover:text-gold transition-colors"
-                >
-                  {link}
-                </a>
-              ))}
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center gap-6 text-sm font-medium">
+              {!user ? (
+                PUBLIC_LINKS.map((link) => (
+                  <a
+                    key={link.label}
+                    href={link.href}
+                    className="text-text-secondary hover:text-gold transition-colors"
+                  >
+                    {link.label}
+                  </a>
+                ))
+              ) : (
+                roleLinks.map((link) => (
+                  <button
+                    key={link.path}
+                    onClick={() => handleNavigation(link.path)}
+                    className={`transition-colors ${
+                      location.pathname === link.path
+                        ? "text-gold"
+                        : "text-text-secondary hover:text-gold"
+                    }`}
+                  >
+                    {link.label}
+                  </button>
+                ))
+              )}
             </div>
 
             {/* Desktop Actions */}
@@ -156,16 +208,30 @@ export default function Navbar({ minimal = false }) {
               className="md:hidden overflow-hidden border-t border-gold/20"
             >
               <div className="px-6 py-4 flex flex-col gap-4">
-                {LINKS.map((link) => (
-                  <a
-                    key={link}
-                    href={`#${link.toLowerCase()}`}
-                    onClick={() => setMobileOpen(false)}
-                    className="text-text-secondary hover:text-gold text-sm"
-                  >
-                    {link}
-                  </a>
-                ))}
+                {!user
+                  ? PUBLIC_LINKS.map((link) => (
+                      <a
+                        key={link.label}
+                        href={link.href}
+                        onClick={() => setMobileOpen(false)}
+                        className="text-text-secondary hover:text-gold text-sm"
+                      >
+                        {link.label}
+                      </a>
+                    ))
+                  : roleLinks.map((link) => (
+                      <button
+                        key={link.path}
+                        onClick={() => handleNavigation(link.path)}
+                        className={`text-left text-sm ${
+                          location.pathname === link.path
+                            ? "text-gold"
+                            : "text-text-secondary hover:text-gold"
+                        }`}
+                      >
+                        {link.label}
+                      </button>
+                    ))}
 
                 <div className="flex items-center justify-between pt-2 border-t border-gold/10">
                   <DarkModeToggle />
