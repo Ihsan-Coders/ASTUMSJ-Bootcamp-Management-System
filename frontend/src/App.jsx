@@ -14,14 +14,6 @@ function App() {
       </main>
       <Footer />
       <BottomNav />
-
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-
-        {/* Reports & Analytics page */}
-        <Route path="/reports" element={<ReportsPage />} />
-      </Routes>
     </div>
   );
 }

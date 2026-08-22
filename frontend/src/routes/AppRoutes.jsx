@@ -1,5 +1,5 @@
 import { Routes, Route } from "react-router-dom";
-import LandingPage from "../pages/LandingPage";
+//import LandingPage from "../pages/LandingPage";
 import LoginPage from "../pages/LoginPage";
 import RegisterPage from "../pages/RegisterPage";
 import NotFoundPage from "../pages/NotFoundPage";
@@ -8,17 +8,17 @@ import HomeRoute from "./HomeRoute";
 import AdminDashboard from "../pages/admin/AdminDashboard";
 import ManageUsers from "../pages/admin/ManageUsers";
 import ManageBatches from "../pages/admin/ManageBatches";
-// import ReportsPage from "../pages/admin/ReportsPage";
+import ReportsPage from "../pages/admin/ReportsPage"
 
 import MentorDashboard from "../pages/mentor/MentorDashboard";
 import AttendancePage from "../pages/mentor/AttendancePage";
-// import AssignmentsPage from "../pages/mentor/AssignmentsPage";
+import AssignmentsPage from "../pages/mentor/AssignmentsPage";
 
 import StudentDashboard from "../pages/student/StudentDashboard";
 import MyAttendance from "../pages/student/MyAttendance";
 import MyProgress from "../pages/student/MyProgress";
 import MyTimeline from "../pages/student/MyTimeline";
-// import Profile from "../pages/student/Profile";
+//import Profile from "../pages/student/Profile";
 
 import ResourceLibraryPage from "../pages/ResourceLibraryPage";
 import AlumniPage from "../pages/AlumniPage";
@@ -58,14 +58,14 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       />
-      {/* <Route
+       <Route
         path="/admin/reports"
         element={
           <ProtectedRoute allowedRoles={["admin"]}>
             <ReportsPage />
           </ProtectedRoute>
         }
-      /> */}
+      /> 
 
       <Route
         path="/mentor"
@@ -83,14 +83,14 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       />
-      {/* <Route
+       <Route
         path="/mentor/assignments"
         element={
           <ProtectedRoute allowedRoles={["mentor"]}>
             <AssignmentsPage />
           </ProtectedRoute>
         }
-      /> */}
+      /> 
 
       <Route
         path="/student"
@@ -100,30 +100,30 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       />
-      {/* <Route
+       <Route
         path="/student/attendance"
         element={
           <ProtectedRoute allowedRoles={["student"]}>
             <MyAttendance />
           </ProtectedRoute>
         }
-      /> */}
-      {/* <Route
+      /> 
+       <Route
         path="/student/progress"
         element={
           <ProtectedRoute allowedRoles={["student"]}>
             <MyProgress />
           </ProtectedRoute>
         }
-      /> */}
-      {/* <Route
+      /> 
+      <Route
         path="/student/timeline"
         element={
           <ProtectedRoute allowedRoles={["student"]}>
             <MyTimeline />
           </ProtectedRoute>
         }
-      /> */}
+      /> 
       {/* <Route
         path="/profile"
         element={
