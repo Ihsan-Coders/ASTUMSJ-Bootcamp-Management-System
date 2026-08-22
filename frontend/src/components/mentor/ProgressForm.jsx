@@ -1,49 +1,58 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import axiosInstance from '../../api/axiosInstance';
+import { useState } from "react";
+import { motion } from "framer-motion";
+import axiosInstance from "../../api/axiosInstance";
+
+const STATUS_OPTIONS = [
+  "Not Started",
+  "In Progress",
+  "Completed",
+  "Needs Improvement",
+];
 
 export default function ProgressForm({
   studentId,
   batchId,
   onUpdated,
 }) {
-  const [topic, setTopic] = useState('');
-  const [progress, setProgress] = useState(0);
+  const [topic, setTopic] = useState("");
+  const [status, setStatus] = useState("Not Started");
+  const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState("");
 
-  // Submit student progress to the backend.
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!studentId || !batchId || !topic.trim()) {
-      setMessage('Please complete all required fields.');
+      setMessage("Please complete all required fields.");
       return;
     }
 
     try {
       setLoading(true);
-      setMessage('');
+      setMessage("");
 
-      await axiosInstance.post('/progress', {
+      await axiosInstance.put("/progress", {
         student: studentId,
         batch: batchId,
         topic: topic.trim(),
-        progress: Number(progress),
+        status,
+        notes: notes.trim(),
       });
 
-      setMessage('Progress updated successfully.');
+      setMessage("Progress updated successfully.");
 
-      setTopic('');
-      setProgress(0);
+      setTopic("");
+      setStatus("Not Started");
+      setNotes("");
 
       onUpdated?.();
     } catch (error) {
-      console.error('Failed to update progress:', error);
+      console.error("Failed to update progress:", error);
 
       setMessage(
         error?.response?.data?.message ||
-          'Failed to update progress.'
+          "Failed to update progress.",
       );
     } finally {
       setLoading(false);
@@ -66,46 +75,54 @@ export default function ProgressForm({
         backdrop-blur-[16px]
       "
     >
-      <div className="
-        absolute
-        top-0
-        left-0
-        right-0
-        h-px
-        bg-gradient-to-r
-        from-transparent
-        via-[#D4AF37]
-        to-transparent
-      " />
+      <div
+        className="
+          absolute
+          top-0
+          left-0
+          right-0
+          h-px
+          bg-gradient-to-r
+          from-transparent
+          via-[#D4AF37]
+          to-transparent
+        "
+      />
 
-      <p className="
-        text-xs
-        uppercase
-        tracking-[0.2em]
-        text-[#D4AF37]
-      ">
+      <p
+        className="
+          text-xs
+          uppercase
+          tracking-[0.2em]
+          text-[#D4AF37]
+        "
+      >
         M2 • Progress
       </p>
 
-      <h2 className="
-        mt-1
-        text-xl
-        font-semibold
-        text-[#F8F9FA]
-      ">
+      <h2
+        className="
+          mt-1
+          text-xl
+          font-semibold
+          text-[#F8F9FA]
+        "
+      >
         Update Progress
       </h2>
 
       <div className="mt-6 space-y-5">
-
+        {/* Topic */}
         <div>
-          <label className="
-            mb-2
-            block
-            text-sm
-            font-medium
-            text-[#F8F9FA]/70
-          ">
+          <label
+            className="
+              mb-2
+              block
+              text-sm
+              font-medium
+              text-[#F8F9FA]/70
+            "
+          >
             Topic
           </label>
 
@@ -119,7 +136,8 @@ export default function ProgressForm({
               rounded-xl
               border border-[#F8F9FA]/10
               bg-[#051C14]
-              px-4 py-3
+              px-4
+              py-3
               text-sm
               text-[#F8F9FA]
               outline-none
@@ -132,78 +150,107 @@ export default function ProgressForm({
           />
         </div>
 
+        {/* Status */}
         <div>
-          <div className="
-            mb-3
-            flex
-            justify-between
-          ">
-            <label className="
-              text-sm
-              text-[#F8F9FA]/70
-            ">
-              Completion
-            </label>
-
-            <span className="
-              font-semibold
-              text-[#D4AF37]
-            ">
-              {progress}%
-            </span>
-          </div>
-
-          <input
-            type="range"
-            min="0"
-            max="100"
-            value={progress}
-            onChange={(e) =>
-              setProgress(Number(e.target.value))
-            }
+          <label
             className="
-              h-2
-              w-full
-              cursor-pointer
-              appearance-none
-              rounded-full
-              bg-[#0A0F0D]
-              accent-[#10B981]
+              mb-2
+              block
+              text-sm
+              font-medium
+              text-[#F8F9FA]/70
             "
-          />
+          >
+            Status
+          </label>
 
-          <div className="
-            mt-3
-            h-2
-            overflow-hidden
-            rounded-full
-            bg-[#0A0F0D]
-          ">
-            <motion.div
-              animate={{
-                width: `${progress}%`,
-              }}
-              className="
-                h-full
-                rounded-full
-                bg-gradient-to-r
-                from-[#D4AF37]
-                to-[#10B981]
-              "
-            />
-          </div>
+          <select
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+            className="
+              w-full
+              rounded-xl
+              border border-[#F8F9FA]/10
+              bg-[#051C14]
+              px-4
+              py-3
+              text-sm
+              text-[#F8F9FA]
+              outline-none
+              transition
+              focus:border-[#D4AF37]/50
+              focus:ring-2
+              focus:ring-[#D4AF37]/10
+            "
+          >
+            {STATUS_OPTIONS.map((option) => (
+              <option
+                key={option}
+                value={option}
+                className="bg-[#051C14] text-[#F8F9FA]"
+              >
+                {option}
+              </option>
+            ))}
+          </select>
         </div>
 
+        {/* Notes */}
+        <div>
+          <label
+            className="
+              mb-2
+              block
+              text-sm
+              font-medium
+              text-[#F8F9FA]/70
+            "
+          >
+            Mentor Notes
+          </label>
+
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Add feedback or notes for the student..."
+            rows={4}
+            className="
+              w-full
+              resize-none
+              rounded-xl
+              border border-[#F8F9FA]/10
+              bg-[#051C14]
+              px-4
+              py-3
+              text-sm
+              text-[#F8F9FA]
+              outline-none
+              placeholder:text-[#F8F9FA]/30
+              transition
+              focus:border-[#D4AF37]/50
+              focus:ring-2
+              focus:ring-[#D4AF37]/10
+            "
+          />
+        </div>
+
+        {/* Submit */}
         <button
           type="submit"
-          disabled={loading || !topic.trim()}
+          disabled={
+            loading ||
+            !studentId ||
+            !batchId ||
+            !topic.trim()
+          }
           className="
             w-full
             rounded-xl
             bg-gradient-to-r
             from-[#D4AF37]
             to-[#10B981]
-            px-5 py-3
+            px-5
+            py-3
             text-sm
             font-bold
             text-[#0A0F0D]
@@ -214,21 +261,21 @@ export default function ProgressForm({
             disabled:opacity-50
           "
         >
-          {loading ? 'Updating...' : 'Update Progress'}
+          {loading ? "Updating..." : "Update Progress"}
         </button>
 
+        {/* Message */}
         {message && (
           <p
             className={`text-sm ${
-              message.includes('successfully')
-                ? 'text-[#10B981]'
-                : 'text-red-400'
+              message.includes("successfully")
+                ? "text-[#10B981]"
+                : "text-red-400"
             }`}
           >
             {message}
           </p>
         )}
-
       </div>
     </motion.form>
   );
