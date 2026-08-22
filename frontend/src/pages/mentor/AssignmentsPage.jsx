@@ -37,6 +37,8 @@ export default function AssignmentsPage({ batchId }) {
       setAssignments(res.data.data || []);
     } catch (err) {
       console.error("FAILED TO LOAD ASSIGNMENTS:", err);
+    } finally {
+      setLoadingAssignments(false);
     }
   };
 
@@ -179,7 +181,6 @@ export default function AssignmentsPage({ batchId }) {
         "DELETING ASSIGNMENT:",
         assignment._id
       );
-      console.log("REFRESHED SUBMISSIONS:", res.data.data);
 
       await deleteAssignment(assignment._id);
 
@@ -214,7 +215,6 @@ export default function AssignmentsPage({ batchId }) {
       );
     } finally {
       setActionLoading(false);
-      console.error("FAILED TO REFRESH SUBMISSIONS:", err);
     }
   };
 
@@ -231,10 +231,13 @@ export default function AssignmentsPage({ batchId }) {
   // ======================================================
 
   return (
-    <div className="pt-24 sm:pt-28 px-4 sm:px-6 pb-24 md:pb-12 max-w-5xl mx-auto">
-      {/* ============================ */}
-      {/* HEADER */}
-      {/* ============================ */}
+    <div className="pt-24 sm:pt-28 px-4 sm:px-6 pb-24 md:pb-12 max-w-6xl mx-auto">
+
+      {/* ==================================================
+          HEADER
+      ================================================== */}
+
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
 
         <motion.h1
           initial={{
@@ -251,8 +254,12 @@ export default function AssignmentsPage({ batchId }) {
         </motion.h1>
 
         <button
-          onClick={() => setShowForm((v) => !v)}
-          className="text-sm px-4 py-2 rounded-lg font-semibold text-obsidian bg-gradient-to-r from-gold to-emerald"
+          onClick={() => {
+            setEditingAssignment(null);
+            setShowForm((value) => !value);
+          }}
+          disabled={actionLoading}
+          className="text-sm px-4 py-2 rounded-lg font-semibold text-obsidian bg-gradient-to-r from-gold to-emerald disabled:opacity-50"
         >
           {showForm ? "Close" : "New Assignment"}
         </button>
@@ -432,9 +439,10 @@ export default function AssignmentsPage({ batchId }) {
       ================================================== */}
 
       <div className="grid md:grid-cols-2 gap-6">
-        {/* ============================ */}
-        {/* ASSIGNMENTS LIST */}
-        {/* ============================ */}
+
+        {/* ==================================================
+            ASSIGNMENT LIST
+        ================================================== */}
 
         <div className="glass-card glow-border rounded-xl p-5">
 
@@ -455,28 +463,87 @@ export default function AssignmentsPage({ batchId }) {
             {assignments.map((assignment) => (
               <div
                 key={assignment._id}
-                onClick={() => openAssignment(assignment)}
-                className={`w-full text-left p-3 rounded-lg border transition-colors ${
+                className={`rounded-lg border transition-colors ${
                   selected?._id === assignment._id
                     ? "border-gold bg-gold/10"
                     : "border-border"
                 }`}
               >
 
-                <p className="text-text-secondary text-xs mt-0.5">
-                  Due {new Date(assignment.deadline).toLocaleDateString()} · Max{" "}
-                  {assignment.maxScore}
-                </p>
-              </button>
+                {/* ASSIGNMENT SELECT */}
+
+                <button
+                  onClick={() =>
+                    openAssignment(assignment)
+                  }
+                  className="w-full text-left p-3 hover:bg-gold/5 rounded-lg"
+                >
+                  <div className="flex items-start justify-between gap-3">
+
+                    <div className="min-w-0">
+                      <p className="text-text-primary text-sm font-medium">
+                        {assignment.title}
+                      </p>
+
+                      <p className="text-text-secondary text-xs mt-1">
+                        Due{" "}
+                        {new Date(
+                          assignment.deadline
+                        ).toLocaleDateString()}{" "}
+                        · Max{" "}
+                        {assignment.maxScore}
+                      </p>
+                    </div>
+
+                  </div>
+                </button>
+
+                {/* EDIT / DELETE */}
+
+                <div className="flex items-center gap-2 px-3 pb-3">
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleEdit(assignment)
+                    }
+                    disabled={actionLoading}
+                    className="flex-1 rounded-lg border border-gold/30 bg-gold/10 px-3 py-2 text-xs font-semibold text-gold hover:bg-gold/20 disabled:opacity-50"
+                  >
+                    Edit
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleDelete(assignment)
+                    }
+                    disabled={actionLoading}
+                    className="flex-1 rounded-lg border border-red-400/30 bg-red-400/10 px-3 py-2 text-xs font-semibold text-red-400 hover:bg-red-400/20 disabled:opacity-50"
+                  >
+                    Delete
+                  </button>
+
+                </div>
+              </div>
             ))}
 
-            {assignments.length === 0 && (
-              <p className="text-text-secondary text-sm">No assignments yet.</p>
-            )}
+            {!loadingAssignments &&
+              assignments.length === 0 && (
+                <p className="text-text-secondary text-sm">
+                  No assignments yet.
+                </p>
+              )}
+
           </div>
         </div>
 
+        {/* ==================================================
+            SUBMISSIONS / GRADING
+        ================================================== */}
+
         <div className="space-y-4">
+
           {!selected && (
             <div className="glass-card glow-border rounded-xl p-5 text-text-secondary text-sm">
               Select an assignment to review submissions.
@@ -489,11 +556,14 @@ export default function AssignmentsPage({ batchId }) {
             </div>
           )}
 
-          {selected && !loading && submissions.length === 0 && (
-            <div className="glass-card glow-border rounded-xl p-5 text-text-secondary text-sm">
-              No submissions yet for "{selected.title}".
-            </div>
-          )}
+          {selected &&
+            !loading &&
+            submissions.length === 0 && (
+              <div className="glass-card glow-border rounded-xl p-5 text-text-secondary text-sm">
+                No submissions yet for "
+                {selected.title}".
+              </div>
+            )}
 
           {selected &&
             !loading &&
