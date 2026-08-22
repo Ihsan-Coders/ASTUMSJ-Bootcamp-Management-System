@@ -1,80 +1,181 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { CalendarClock, Megaphone, X } from "lucide-react";
+import {
+  CalendarClock,
+  Megaphone,
+  X,
+} from "lucide-react";
+
 import AttendanceRing from "../../components/common/AttendanceRing";
 import { getStudentDashboard } from "../../api/dashboard.api";
+import axiosInstance from "../../api/axiosInstance";
+import { useAuth } from "../../context/AuthContext";
 import Submission from "./SubmissionForm";
 
-const FALLBACK_TOPICS = [
-  { name: "HTML / CSS", progress: 100 },
-  { name: "JavaScript", progress: 90 },
-  { name: "React", progress: 65 },
-  { name: "Node.js / Express", progress: 40 },
-  { name: "MongoDB", progress: 20 },
+const FALLBACK_ANNOUNCEMENTS = [
+  {
+    title: "Guest talk: Building at scale",
+    time: "1 day ago",
+  },
+  {
+    title: "Batch 4 demo day moved to Friday",
+    time: "3 days ago",
+  },
 ];
 
-const FALLBACK_ANNOUNCEMENTS = [
-  { title: "Guest talk: Building at scale", time: "1 day ago" },
-  { title: "Batch 4 demo day moved to Friday", time: "3 days ago" },
-];
+// Same progress calculation used in MyProgress.jsx
+const getProgressPercentage = (status) => {
+  switch (status) {
+    case "Completed":
+      return 100;
+
+    case "In Progress":
+      return 50;
+
+    case "Needs Improvement":
+      return 35;
+
+    case "Not Started":
+    default:
+      return 0;
+  }
+};
 
 export default function StudentDashboard() {
+  const { user } = useAuth();
+
   const [attendance, setAttendance] = useState(94);
   const [deadlines, setDeadlines] = useState([]);
   const [announcements, setAnnouncements] = useState(
     FALLBACK_ANNOUNCEMENTS,
   );
+  const [topicProgress, setTopicProgress] = useState([]);
   const [isLive, setIsLive] = useState(false);
-  const [selectedAssignment, setSelectedAssignment] = useState(null);
+  const [selectedAssignment, setSelectedAssignment] =
+    useState(null);
 
   useEffect(() => {
-    getStudentDashboard()
-      .then((res) => {
-        console.log("STUDENT DASHBOARD RESPONSE:", res.data);
+    if (!user?.id) {
+      return;
+    }
 
-        const data = res.data.data;
+    const loadDashboard = async () => {
+      try {
+        // ==========================================
+        // STUDENT DASHBOARD
+        // ==========================================
+
+        const dashboardResponse =
+          await getStudentDashboard();
+
+        console.log(
+          "STUDENT DASHBOARD RESPONSE:",
+          dashboardResponse.data,
+        );
+
+        const data = dashboardResponse.data.data;
 
         console.log(
           "UPCOMING ASSIGNMENTS:",
           data.upcomingAssignments,
         );
 
-        setAttendance(data.attendancePercentage ?? 0);
+        // ==========================================
+        // ATTENDANCE
+        // ==========================================
 
-        // Get assignments from backend
-        if (Array.isArray(data.upcomingAssignments)) {
-          setDeadlines(data.upcomingAssignments);
+        setAttendance(
+          data.attendancePercentage ?? 0,
+        );
+
+        // ==========================================
+        // UPCOMING ASSIGNMENTS
+        // ==========================================
+
+        if (
+          Array.isArray(
+            data.upcomingAssignments,
+          )
+        ) {
+          setDeadlines(
+            data.upcomingAssignments,
+          );
         } else {
           setDeadlines([]);
         }
 
-        // Get announcements from backend
-        if (Array.isArray(data.recentAnnouncements)) {
+        // ==========================================
+        // ANNOUNCEMENTS
+        // ==========================================
+
+        if (
+          Array.isArray(
+            data.recentAnnouncements,
+          )
+        ) {
           setAnnouncements(
             data.recentAnnouncements.map((a) => ({
               title: a.title,
               time: a.publishDate
-                ? new Date(a.publishDate).toLocaleDateString()
+                ? new Date(
+                    a.publishDate,
+                  ).toLocaleDateString()
                 : "",
             })),
           );
         }
 
+        // ==========================================
+        // REAL TOPIC PROGRESS
+        // ==========================================
+
+        const progressResponse =
+          await axiosInstance.get("/progress", {
+            params: {
+              studentId: user.id,
+            },
+          });
+
+        console.log(
+          "STUDENT PROGRESS RESPONSE:",
+          progressResponse.data,
+        );
+
+        setTopicProgress(
+          progressResponse?.data?.data || [],
+        );
+
+        // ==========================================
+        // LIVE DATA LOADED
+        // ==========================================
+
         setIsLive(true);
-      })
-      .catch((err) => {
-        console.error("Failed to load student dashboard:", err);
+      } catch (err) {
+        console.error(
+          "Failed to load student dashboard:",
+          err,
+        );
+
         setIsLive(false);
-      });
-  }, []);
+      }
+    };
+
+    loadDashboard();
+  }, [user?.id]);
 
   return (
     <div className="pt-24 sm:pt-28 px-4 sm:px-6 pb-24 md:pb-12 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <motion.h1
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{
+            opacity: 0,
+            y: 10,
+          }}
+          animate={{
+            opacity: 1,
+            y: 0,
+          }}
           className="text-2xl sm:text-3xl font-bold text-text-primary font-[var(--font-display)]"
         >
           My Dashboard
@@ -87,53 +188,88 @@ export default function StudentDashboard() {
         )}
       </div>
 
-      {/* Attendance + Progress */}
+      {/* ==========================================
+          ATTENDANCE + TOPIC PROGRESS
+          ========================================== */}
+
       <div className="grid lg:grid-cols-3 gap-6">
+        {/* Attendance */}
         <div className="glass-card glow-border arch-top rounded-xl p-6 flex flex-col items-center justify-center">
-          <AttendanceRing percentage={attendance} />
+          <AttendanceRing
+            percentage={attendance}
+          />
         </div>
 
+        {/* Topic Progress */}
         <div className="glass-card glow-border rounded-xl p-5 lg:col-span-2">
           <h2 className="text-text-primary font-semibold mb-4">
             Topic Progress
           </h2>
 
           <div className="space-y-3">
-            {FALLBACK_TOPICS.map((topic) => (
-              <div key={topic.name}>
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="text-text-primary">
-                    {topic.name}
-                  </span>
+            {topicProgress.length === 0 ? (
+              <p className="text-text-secondary text-sm">
+                No progress tracked yet.
+              </p>
+            ) : (
+              topicProgress.map((item, index) => {
+                const progress =
+                  getProgressPercentage(
+                    item.status,
+                  );
 
-                  <span className="text-text-secondary">
-                    {topic.progress}%
-                  </span>
-                </div>
+                return (
+                  <div
+                    key={item._id || index}
+                  >
+                    {/* Topic name + percentage */}
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="text-text-primary">
+                        {item.topic}
+                      </span>
 
-                <div className="h-2 rounded-full bg-border/40 overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${topic.progress}%` }}
-                    transition={{
-                      duration: 0.8,
-                      ease: "easeOut",
-                    }}
-                    className="h-full rounded-full bg-gradient-to-r from-gold to-emerald"
-                  />
-                </div>
-              </div>
-            ))}
+                      <span className="text-text-secondary">
+                        {progress}%
+                      </span>
+                    </div>
+
+                    {/* Progress bar */}
+                    <div className="h-2 rounded-full bg-border/40 overflow-hidden">
+                      <motion.div
+                        initial={{
+                          width: 0,
+                        }}
+                        animate={{
+                          width: `${progress}%`,
+                        }}
+                        transition={{
+                          duration: 0.8,
+                          ease: "easeOut",
+                        }}
+                        className="h-full rounded-full bg-gradient-to-r from-gold to-emerald"
+                      />
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
       </div>
 
-      {/* Deadlines + Announcements */}
+      {/* ==========================================
+          DEADLINES + ANNOUNCEMENTS
+          ========================================== */}
+
       <div className="grid md:grid-cols-2 gap-6 mt-6">
         {/* Upcoming Assignments */}
         <div className="glass-card glow-border rounded-xl p-5">
           <h2 className="text-text-primary font-semibold mb-4 flex items-center gap-2">
-            <CalendarClock size={18} className="text-gold" />
+            <CalendarClock
+              size={18}
+              className="text-gold"
+            />
+
             Upcoming Assignments
           </h2>
 
@@ -161,13 +297,16 @@ export default function StudentDashboard() {
                               assignment.deadline,
                             ).toLocaleDateString()
                           : "No deadline"}{" "}
-                        · Max {assignment.maxScore}
+                        · Max{" "}
+                        {assignment.maxScore}
                       </p>
                     </div>
 
                     <button
                       onClick={() =>
-                        setSelectedAssignment(assignment)
+                        setSelectedAssignment(
+                          assignment,
+                        )
                       }
                       className="shrink-0 text-xs px-3 py-1.5 rounded-lg text-gold border border-gold/30 hover:bg-gold/10 transition-colors"
                     >
@@ -183,30 +322,39 @@ export default function StudentDashboard() {
         {/* Announcements */}
         <div className="glass-card glow-border rounded-xl p-5">
           <h2 className="text-text-primary font-semibold mb-4 flex items-center gap-2">
-            <Megaphone size={18} className="text-gold" />
+            <Megaphone
+              size={18}
+              className="text-gold"
+            />
+
             Announcements
           </h2>
 
           <div className="space-y-3">
-            {announcements.map((announcement) => (
-              <div
-                key={announcement.title}
-                className="border-b border-border/50 last:border-0 pb-3 last:pb-0"
-              >
-                <p className="text-text-primary text-sm">
-                  {announcement.title}
-                </p>
+            {announcements.map(
+              (announcement) => (
+                <div
+                  key={announcement.title}
+                  className="border-b border-border/50 last:border-0 pb-3 last:pb-0"
+                >
+                  <p className="text-text-primary text-sm">
+                    {announcement.title}
+                  </p>
 
-                <p className="text-text-secondary text-xs mt-0.5">
-                  {announcement.time}
-                </p>
-              </div>
-            ))}
+                  <p className="text-text-secondary text-xs mt-0.5">
+                    {announcement.time}
+                  </p>
+                </div>
+              ),
+            )}
           </div>
         </div>
       </div>
 
-      {/* Selected Assignment */}
+      {/* ==========================================
+          SELECTED ASSIGNMENT
+          ========================================== */}
+
       {selectedAssignment && (
         <div className="glass-card glow-border rounded-xl p-6 mt-6">
           {/* Assignment Header */}
@@ -217,12 +365,15 @@ export default function StudentDashboard() {
               </h2>
 
               <p className="text-sm text-text-secondary mt-1">
-                Maximum Score: {selectedAssignment.maxScore}
+                Maximum Score:{" "}
+                {selectedAssignment.maxScore}
               </p>
             </div>
 
             <button
-              onClick={() => setSelectedAssignment(null)}
+              onClick={() =>
+                setSelectedAssignment(null)
+              }
               className="text-text-secondary hover:text-text-primary"
               aria-label="Close assignment"
             >
@@ -273,7 +424,9 @@ export default function StudentDashboard() {
             </h3>
 
             <Submission
-              assignmentId={selectedAssignment._id}
+              assignmentId={
+                selectedAssignment._id
+              }
               onSubmitted={() => {
                 setSelectedAssignment(null);
               }}

@@ -94,6 +94,14 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/mentor/progress"
+        element={
+          <ProtectedRoute allowedRoles={["mentor"]}>
+            <MentorProgressPage />
+          </ProtectedRoute>
+        }
+      />
 
       <Route
         path="/student"
