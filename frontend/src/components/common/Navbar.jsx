@@ -23,10 +23,11 @@ const ROLE_LINKS = {
   ],
 
   mentor: [
-    { label: "Dashboard", path: "/mentor" },
-    { label: "Attendance", path: "/mentor/attendance" },
-    { label: "Assignments", path: "/mentor/assignments" },
-  ],
+  { label: "Dashboard", path: "/mentor" },
+  { label: "Attendance", path: "/mentor/attendance" },
+  { label: "Assignments", path: "/mentor/assignments" },
+  { label: "Progress", path: "/mentor/progress" },
+],
 
   student: [
     { label: "Dashboard", path: "/student" },

@@ -1,100 +1,183 @@
-const Progress = require('../models/Progress');
-const asyncHandler = require('../utils/asyncHandler');
+const Progress = require("../models/Progress");
+const asyncHandler = require("../utils/asyncHandler");
 
-// Update or create student progress
+// ======================================================
+// UPDATE / CREATE STUDENT PROGRESS
+// Mentor only
+// ======================================================
+
 const updateProgress = asyncHandler(async (req, res) => {
-    const { student, batch, topic, status, notes } = req.body;
+  const {
+    student,
+    batch,
+    topic,
+    progress,
+    status,
+    notes = "",
+  } = req.body;
 
-    const progress = await Progress.findOneAndUpdate(
-      { student, topic },
-      {
-        batch,
-        status,
-        notes,
-        updatedBy: req.user.id
-      },
-      {
-        new: true,
-        upsert: true
-      }
-    );
-
-    res.status(200).json({
-      success: true,
-      data: progress,
-      message: 'Progress updated'
+  if (
+    !student ||
+    !batch ||
+    !topic ||
+    progress === undefined ||
+    !status
+  ) {
+    return res.status(400).json({
+      success: false,
+      data: null,
+      message:
+        "Student, batch, topic, progress and status are required.",
     });
-})
+  }
 
+  const progressValue = Number(progress);
 
-// Get student progress with optional filters
+  if (
+    Number.isNaN(progressValue) ||
+    progressValue < 0 ||
+    progressValue > 100
+  ) {
+    return res.status(400).json({
+      success: false,
+      data: null,
+      message: "Progress must be a number between 0 and 100.",
+    });
+  }
+
+  const progressRecord = await Progress.findOneAndUpdate(
+    {
+      student,
+      batch,
+      topic: topic.trim(),
+    },
+    {
+      student,
+      batch,
+      topic: topic.trim(),
+      progress: progressValue,
+      status,
+      notes: notes.trim(),
+      updatedBy: req.user.id,
+    },
+    {
+      new: true,
+      upsert: true,
+      runValidators: true,
+      setDefaultsOnInsert: true,
+    }
+  );
+
+  res.status(200).json({
+    success: true,
+    data: progressRecord,
+    message: "Progress updated successfully.",
+  });
+});
+
+// ======================================================
+// GET STUDENT PROGRESS
+// Admin / Mentor / Student
+// ======================================================
+
 const getProgress = asyncHandler(async (req, res) => {
-    const { studentId, batchId } = req.query;
+  const { studentId, batchId } = req.query;
 
-    const filter = {};
+  const filter = {};
 
-    if (studentId) filter.student = studentId;
-    if (batchId) filter.batch = batchId;
+  // Students can only see their own progress.
+  if (req.user.role === "student") {
+    filter.student = req.user.id;
+  } else if (studentId) {
+    filter.student = studentId;
+  }
 
-    const records = await Progress.find(filter);
+  if (batchId) {
+    filter.batch = batchId;
+  }
 
-    res.status(200).json({
-      success: true,
-      data: records,
-      message: 'Progress fetched'
-    });
-})
+  const records = await Progress.find(filter)
+    .populate("student", "name email")
+    .populate("batch", "name")
+    .populate("updatedBy", "name email")
+    .sort({ updatedAt: -1 });
 
+  res.status(200).json({
+    success: true,
+    data: records,
+    message: "Progress fetched successfully.",
+  });
+});
 
-// Calculate a student's progress summary and percentage
+// ======================================================
+// GET STUDENT PROGRESS SUMMARY
+// ======================================================
+
 const getProgressSummary = asyncHandler(async (req, res) => {
-    const { studentId } = req.params;
+  const { studentId } = req.params;
 
-    const records = await Progress.find({
-      student: studentId
+  if (
+    req.user.role === "student" &&
+    String(req.user.id) !== String(studentId)
+  ) {
+    return res.status(403).json({
+      success: false,
+      data: null,
+      message:
+        "You are not allowed to view another student's progress.",
     });
+  }
 
-    const totalTopics = records.length;
+  const records = await Progress.find({
+    student: studentId,
+  });
 
-    const completed = records.filter(
-      record => record.status === 'Completed'
-    ).length;
+  const totalTopics = records.length;
 
-    const inProgress = records.filter(
-      record => record.status === 'In Progress'
-    ).length;
+  const completed = records.filter(
+    (record) => record.status === "Completed"
+  ).length;
 
-    const needsImprovement = records.filter(
-      record => record.status === 'Needs Improvement'
-    ).length;
+  const inProgress = records.filter(
+    (record) => record.status === "In Progress"
+  ).length;
 
-    const notStarted = records.filter(
-      record => record.status === 'Not Started'
-    ).length;
+  const needsImprovement = records.filter(
+    (record) => record.status === "Needs Improvement"
+  ).length;
 
-    const progressPercentage =
-      totalTopics === 0
-        ? 0
-        : Math.round((completed / totalTopics) * 100);
+  const notStarted = records.filter(
+    (record) => record.status === "Not Started"
+  ).length;
 
-    res.status(200).json({
-      success: true,
-      data: {
-        studentId,
-        totalTopics,
-        completed,
-        inProgress,
-        needsImprovement,
-        notStarted,
-        progressPercentage
-      },
-      message: 'Progress summary fetched'
-    });
-})
+  const progressPercentage =
+    totalTopics === 0
+      ? 0
+      : Math.round(
+          records.reduce(
+            (total, record) =>
+              total + Number(record.progress || 0),
+            0
+          ) / totalTopics
+        );
 
+  res.status(200).json({
+    success: true,
+    data: {
+      studentId,
+      totalTopics,
+      completed,
+      inProgress,
+      needsImprovement,
+      notStarted,
+      progressPercentage,
+    },
+    message: "Progress summary fetched successfully.",
+  });
+});
 
 module.exports = {
   updateProgress,
   getProgress,
-  getProgressSummary
+  getProgressSummary,
 };

@@ -3,6 +3,7 @@ import { Routes, Route } from "react-router-dom";
 import LoginPage from "../pages/LoginPage";
 import RegisterPage from "../pages/RegisterPage";
 import NotFoundPage from "../pages/NotFoundPage";
+import MentorProgressPage from "../pages/mentor/ProgressPage";
 import ProtectedRoute from "../components/auth/ProtectedRoute";
 import HomeRoute from "./HomeRoute";
 import AdminDashboard from "../pages/admin/AdminDashboard";

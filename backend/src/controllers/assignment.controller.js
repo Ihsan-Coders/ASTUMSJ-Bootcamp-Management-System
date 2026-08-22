@@ -1,32 +1,141 @@
-const Assignment = require('../models/Assignment');
-const { syncAssignmentDeadline } = require('../services/calendar.service');
-const asyncHandler = require('../utils/asyncHandler');
+const Assignment = require("../models/Assignment");
+
+const { syncAssignmentDeadline } = require("../services/calendar.service");
+
+const asyncHandler = require("../utils/asyncHandler");
+
+// ======================================================
+// CREATE ASSIGNMENT
+// Mentor only
+// ======================================================
 
 const createAssignment = asyncHandler(async (req, res) => {
-    const assignment = await Assignment.create({ ...req.body, createdBy: req.user.id });
-    await syncAssignmentDeadline(assignment); // keeps M2's calendar in sync automatically
-    res.status(201).json({ success: true, data: assignment, message: 'Assignment created' });
-})
+  const assignment = await Assignment.create({
+    ...req.body,
+    createdBy: req.user.id,
+  });
+
+  await syncAssignmentDeadline(assignment);
+
+  res.status(201).json({
+    success: true,
+    data: assignment,
+    message: "Assignment created",
+  });
+});
+
+// ======================================================
+// GET ASSIGNMENTS
+// Admin / Mentor / Student
+// ======================================================
 
 const getAssignments = asyncHandler(async (req, res) => {
-    const { batchId } = req.query;
-    const filter = batchId ? { batch: batchId } : {};
-    const assignments = await Assignment.find(filter).sort({ deadline: 1 });
-    res.status(200).json({ success: true, data: assignments, message: 'Assignments fetched' });
- 
-})
+  const { batchId } = req.query;
+
+  const filter = batchId ? { batch: batchId } : {};
+
+  const assignments = await Assignment.find(filter)
+    .populate("createdBy", "name email")
+    .populate("batch", "name")
+    .sort({ deadline: 1 });
+
+  res.status(200).json({
+    success: true,
+    data: assignments,
+    message: "Assignments fetched",
+  });
+});
+
+// ======================================================
+// UPDATE ASSIGNMENT
+// Mentor only
+//
+// A mentor can only edit an assignment they created.
+// ======================================================
 
 const updateAssignment = asyncHandler(async (req, res) => {
-    const assignment = await Assignment.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    if (assignment) await syncAssignmentDeadline(assignment); // keep calendar in sync on edits too
-    res.status(200).json({ success: true, data: assignment, message: 'Assignment updated' });
- 
-})
+  const assignment = await Assignment.findById(req.params.id);
+
+  if (!assignment) {
+    return res.status(404).json({
+      success: false,
+      data: null,
+      message: "Assignment not found",
+    });
+  }
+
+  if (String(assignment.createdBy) !== String(req.user.id)) {
+    return res.status(403).json({
+      success: false,
+      data: null,
+      message: "You can only edit assignments you created.",
+    });
+  }
+
+  const allowedFields = [
+    "title",
+    "description",
+    "instructions",
+    "batch",
+    "deadline",
+    "maxScore",
+  ];
+
+  allowedFields.forEach((field) => {
+    if (req.body[field] !== undefined) {
+      assignment[field] = req.body[field];
+    }
+  });
+
+  await assignment.save();
+
+  await syncAssignmentDeadline(assignment);
+
+  res.status(200).json({
+    success: true,
+    data: assignment,
+    message: "Assignment updated",
+  });
+});
+
+// ======================================================
+// DELETE ASSIGNMENT
+// Mentor only
+//
+// A mentor can only delete an assignment they created.
+// ======================================================
 
 const deleteAssignment = asyncHandler(async (req, res) => {
-    await Assignment.findByIdAndDelete(req.params.id);
-    res.status(200).json({ success: true, data: null, message: 'Assignment deleted' });
-  
-})
+  const assignment = await Assignment.findById(req.params.id);
 
-module.exports = { createAssignment, getAssignments, updateAssignment, deleteAssignment };
+  if (!assignment) {
+    return res.status(404).json({
+      success: false,
+      data: null,
+      message: "Assignment not found",
+    });
+  }
+
+  if (String(assignment.createdBy) !== String(req.user.id)) {
+    return res.status(403).json({
+      success: false,
+      data: null,
+      message: "You can only delete assignments you created.",
+    });
+  }
+
+  await Assignment.findByIdAndDelete(req.params.id);
+
+  res.status(200).json({
+    success: true,
+    data: null,
+    message: "Assignment deleted",
+  });
+});
+
+module.exports = {
+  createAssignment,
+  getAssignments,
+  updateAssignment,
+  deleteAssignment,
+};
