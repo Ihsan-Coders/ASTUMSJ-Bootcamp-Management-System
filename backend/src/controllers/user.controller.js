@@ -1,6 +1,7 @@
 const User = require('../models/User');
+const bcrypt = require('bcryptjs');
 const { hashPassword } = require('../utils/hashPassword');
-const allowedUserFields = ['name','email','batch',];
+const allowedUserFields = ['name', 'email', 'batch'];
 const asyncHandler = require('../utils/asyncHandler');
 
 const getAllowedUserUpdates = (body) => {
@@ -14,6 +15,100 @@ const getAllowedUserUpdates = (body) => {
 
   return updates;
 };
+
+// GET /api/users/me — the authenticated user's own profile.
+const getMe = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user.id)
+    .select('-password')
+    .populate('batch', 'name');
+
+  if (!user) {
+    return res.status(404).json({ success: false, data: null, message: 'User not found' });
+  }
+
+  res.status(200).json({ success: true, data: user, message: 'Profile fetched' });
+});
+
+// PUT /api/users/me — self-service profile update. Only the fields listed
+// here can ever be changed through this endpoint: role, batch, isActive
+// (approval status) and password are intentionally excluded and are
+// admin-controlled elsewhere.
+const selfEditableFields = ['name', 'email'];
+
+const updateMe = asyncHandler(async (req, res) => {
+  const updates = {};
+  selfEditableFields.forEach((field) => {
+    if (req.body[field] !== undefined) updates[field] = req.body[field];
+  });
+
+  if (updates.email) {
+    const existing = await User.findOne({
+      email: updates.email,
+      _id: { $ne: req.user.id },
+    });
+
+    if (existing) {
+      return res.status(400).json({
+        success: false,
+        data: null,
+        message: 'Email already in use',
+      });
+    }
+  }
+
+  const user = await User.findByIdAndUpdate(req.user.id, updates, {
+    new: true,
+    runValidators: true,
+  })
+    .select('-password')
+    .populate('batch', 'name');
+
+  if (!user) {
+    return res.status(404).json({ success: false, data: null, message: 'User not found' });
+  }
+
+  res.status(200).json({ success: true, data: user, message: 'Profile updated' });
+});
+
+const changePassword = asyncHandler(async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  const user = await User.findById(req.user.id).select('+password');
+
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      data: null,
+      message: 'User not found',
+    });
+  }
+
+const isCurrentPasswordValid = await bcrypt.compare(
+  currentPassword,
+  user.password
+);
+
+  if (!isCurrentPasswordValid) {
+    return res.status(400).json({
+      success: false,
+      data: null,
+      message: 'Current password is incorrect',
+    });
+  }
+
+  const hashedPassword = await hashPassword(newPassword);
+
+  user.password = hashedPassword;
+
+  await user.save();
+
+  res.status(200).json({
+    success: true,
+    data: null,
+    message: 'Password changed successfully',
+  });
+});
+
 const getUsers = asyncHandler(async (req, res) => {
     const { role, search } = req.query;
     const filter = {};
@@ -67,6 +162,14 @@ const rejectUser = asyncHandler(async (req, res) => {
 })
 
 module.exports = {
-  getUsers, createUser, updateUser, deleteUser,
-  getPendingUsers, approveUser, rejectUser,
+  getMe,
+  updateMe,
+  changePassword,
+  getUsers,
+  createUser,
+  updateUser,
+  deleteUser,
+  getPendingUsers,
+  approveUser,
+  rejectUser,
 };

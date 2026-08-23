@@ -2,14 +2,38 @@ const express = require('express');
 const router = express.Router();
 const protect = require('../middleware/auth.middleware');
 const authorize = require('../middleware/role.middleware');
-const {getUsers, createUser, updateUser, deleteUser,
-    getPendingUsers, approveUser, rejectUser,
-    } = require('../controllers/user.controller');
+const {
+  getMe,
+  updateMe,
+  changePassword,
+  getUsers,
+  createUser,
+  updateUser,
+  deleteUser,
+  getPendingUsers,
+  approveUser,
+  rejectUser,
+} = require('../controllers/user.controller');
 const validateObjectId = require('../middleware/validateObjectId.middleware');
 const validate = require('../middleware/validate.middleware');
-const {createUserSchema,updateUserSchema,} = require('../validators/user.validator');
+const {
+  createUserSchema,
+  updateUserSchema,
+  updateMeSchema,
+  changePasswordSchema,
+} = require('../validators/user.validator');
 
-router.use(protect, authorize('admin'));
+// Every route below requires authentication.
+router.use(protect);
+
+// Self-service profile — any authenticated role (admin, mentor, student).
+// Registered before the admin-only gate below so it isn't blocked by it.
+router.get('/me', getMe);
+router.put('/me', validate(updateMeSchema), updateMe);
+router.put('/me/password',validate(changePasswordSchema),changePassword);
+
+// Everything past this point is admin-only.
+router.use(authorize('admin'));
 router.get('/', getUsers);
 router.post('/',validate(createUserSchema), createUser);
 router.get('/pending', getPendingUsers);

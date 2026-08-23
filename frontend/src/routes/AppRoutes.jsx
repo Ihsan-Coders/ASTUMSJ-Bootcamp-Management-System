@@ -4,7 +4,6 @@ import LoginPage from "../pages/LoginPage";
 import RegisterPage from "../pages/RegisterPage";
 import NotFoundPage from "../pages/NotFoundPage";
 import MentorProgressPage from "../pages/mentor/ProgressPage";
-
 import ProtectedRoute from "../components/auth/ProtectedRoute";
 import HomeRoute from "./HomeRoute";
 import AdminDashboard from "../pages/admin/AdminDashboard";
@@ -14,7 +13,7 @@ import ReportsPage from "../pages/admin/ReportsPage";
 
 import MentorDashboard from "../pages/mentor/MentorDashboard";
 // import AttendancePage from "../pages/mentor/AttendancePage";
-import MentorAttendancePage from "../pages/mentor/MentorAttendancePage"; 
+import MentorAttendancePage from "../pages/mentor/MentorAttendancePage"; // real mentor mark-attendance page
 // import StudentAttendancePage from '../pages/mentor/AttendancePage'; // misplaced file, actually shows a student's own attendance
 import AssignmentsPage from "../pages/mentor/AssignmentsPage";
 
@@ -22,7 +21,7 @@ import StudentDashboard from "../pages/student/StudentDashboard";
 import MyAttendance from "../pages/student/MyAttendance";
 import MyProgress from "../pages/student/MyProgress";
 import MyTimeline from "../pages/student/MyTimeline";
-//import Profile from "../pages/student/Profile";
+import Profile from "../pages/student/Profile";
 
 import ResourceLibraryPage from "../pages/ResourceLibraryPage";
 import AlumniPage from "../pages/AlumniPage";
@@ -159,14 +158,14 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       />
-      {/* <Route
+      <Route
         path="/profile"
         element={
           <ProtectedRoute>
             <Profile />
           </ProtectedRoute>
         }
-      /> */}
+      />
 
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
