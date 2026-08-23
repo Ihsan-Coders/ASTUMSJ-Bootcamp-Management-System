@@ -275,35 +275,36 @@ export default function MyAssignments() {
           ASSIGNMENT DETAIL MODAL
           ====================================================== */}
 
-      {selectedAssignment && (
-        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/60 p-4 overflow-y-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="glass-card glow-border rounded-xl p-6 w-full max-w-2xl my-8"
-          >
+    {selectedAssignment && (
+  <div className="fixed inset-0 z-[9999] bg-black/60">
+    <div className="absolute inset-0 overflow-y-auto">
+      <div className="min-h-full flex items-start justify-center px-4 pt-28 pb-8">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative w-full max-w-2xl glass-card glow-border rounded-xl p-4 sm:p-6"
+        >
             {/* MODAL HEADER */}
 
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-semibold text-text-primary">
-                  {selectedAssignment.title}
-                </h2>
+            <div className="flex items-start justify-between gap-3 min-w-0">
+                  <div className="min-w-0 flex-1 pr-2">
+                    <h2 className="text-lg sm:text-xl font-semibold text-text-primary break-words">
+                      {selectedAssignment.title}
+                    </h2>
 
-                <p className="text-sm text-text-secondary mt-1">
-                  Maximum Score: {selectedAssignment.maxScore}
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={closeModal}
-                className="text-text-secondary hover:text-text-primary"
-                aria-label="Close assignment"
-              >
-                <X size={20} />
-              </button>
-            </div>
+                    <p className="text-sm text-text-secondary mt-1">
+                      Maximum Score: {selectedAssignment.maxScore}
+                    </p>
+                  </div>
+                <button
+                    type="button"
+                    onClick={closeModal}
+                    className="relative z-10 shrink-0 w-9 h-9 flex items-center justify-center rounded-lg text-text-secondary hover:text-text-primary hover:bg-border/20 transition-colors"
+                    aria-label="Close assignment"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
 
             {/* DESCRIPTION */}
 
@@ -357,25 +358,19 @@ export default function MyAssignments() {
                     Your Submission
                   </h3>
 
-                  <div className="flex items-center gap-2">
-                    <StatusBadge
-                      status={selectedSubmission.status}
-                    />
+                  <div className="flex items-center gap-2 shrink-0">
+                      <StatusBadge status={selectedSubmission.status} />
 
-                    {/* EDIT BUTTON */}
-
-                    {selectedSubmission.status !== "Graded" && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setEditingSubmission(true)
-                        }
-                        className="text-xs px-3 py-1.5 rounded-lg text-gold border border-gold/30 hover:bg-gold/10 transition-colors"
-                      >
-                        Edit
-                      </button>
-                    )}
-                  </div>
+                      {selectedSubmission.status !== "Graded" && (
+                        <button
+                          type="button"
+                          onClick={() => setEditingSubmission(true)}
+                          className="shrink-0 text-xs px-3 py-1.5 rounded-lg text-gold border border-gold/30 hover:bg-gold/10 transition-colors"
+                        >
+                          Edit
+                        </button>
+                      )}
+                    </div>
                 </div>
 
                 {/* SUBMISSION DETAILS */}
@@ -510,9 +505,11 @@ export default function MyAssignments() {
                 />
               </div>
             )}
-          </motion.div>
-        </div>
-      )}
+                  </motion.div>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 }
