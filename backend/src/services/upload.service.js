@@ -1,11 +1,11 @@
 const cloudinary = require("../config/cloudinary");
 const streamifier = require("streamifier");
 
-const uploadToCloudinary = (file) => {
+const uploadToCloudinary = (file, folder = "astumsj-submissions") => {
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
       {
-        folder: "astumsj-submissions",
+        folder,
         resource_type: "auto",
       },
       (error, result) => {

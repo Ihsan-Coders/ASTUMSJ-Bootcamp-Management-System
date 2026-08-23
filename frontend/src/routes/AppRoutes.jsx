@@ -4,6 +4,7 @@ import LoginPage from "../pages/LoginPage";
 import RegisterPage from "../pages/RegisterPage";
 import NotFoundPage from "../pages/NotFoundPage";
 import MentorProgressPage from "../pages/mentor/ProgressPage";
+
 import ProtectedRoute from "../components/auth/ProtectedRoute";
 import HomeRoute from "./HomeRoute";
 import AdminDashboard from "../pages/admin/AdminDashboard";
@@ -13,7 +14,7 @@ import ReportsPage from "../pages/admin/ReportsPage";
 
 import MentorDashboard from "../pages/mentor/MentorDashboard";
 // import AttendancePage from "../pages/mentor/AttendancePage";
-import MentorAttendancePage from "../pages/mentor/MentorAttendancePage"; // real mentor mark-attendance page
+import MentorAttendancePage from "../pages/mentor/MentorAttendancePage"; 
 // import StudentAttendancePage from '../pages/mentor/AttendancePage'; // misplaced file, actually shows a student's own attendance
 import AssignmentsPage from "../pages/mentor/AssignmentsPage";
 
@@ -62,6 +63,14 @@ export default function AppRoutes() {
         }
       />
       <Route
+        path="/admin/resources"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <ResourceLibraryPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/admin/reports"
         element={
           <ProtectedRoute allowedRoles={["admin"]}>
@@ -95,6 +104,15 @@ export default function AppRoutes() {
         }
       />
       <Route
+        path="/mentor/resources"
+        element={
+          <ProtectedRoute allowedRoles={["mentor"]}>
+            <ResourceLibraryPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
         path="/mentor/progress"
         element={
           <ProtectedRoute allowedRoles={["mentor"]}>
@@ -125,6 +143,12 @@ export default function AppRoutes() {
           <ProtectedRoute allowedRoles={["student"]}>
             <MyProgress />
           </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/resources"
+        element={
+            <ResourceLibraryPage />
         }
       />
       <Route

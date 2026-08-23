@@ -17,6 +17,12 @@ const resourceSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    // Populated only when the resource is an uploaded file (type "Document")
+    // rather than an external link.
+    fileName: { type: String, default: null },
+    fileSize: { type: Number, default: null },
+    mimeType: { type: String, default: null },
+    cloudinaryPublicId: { type: String, default: null },
   },
   { timestamps: true },
 );

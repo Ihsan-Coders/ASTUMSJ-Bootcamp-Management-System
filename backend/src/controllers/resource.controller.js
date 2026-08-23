@@ -1,34 +1,128 @@
 const Resource = require("../models/Resource");
-const asyncHandler = require('../utils/asyncHandler');
+const User = require("../models/User");
+const cloudinary = require("../config/cloudinary");
+const { uploadToCloudinary } = require("../services/upload.service");
+const asyncHandler = require("../utils/asyncHandler");
 
 const createResource = asyncHandler(async (req, res) => {
-    const resource = await Resource.create({
-      ...req.body,
-      uploadedBy: req.user.id,
+  const { title, description, type, topic, url, batch } = req.body;
+
+  let resourceUrl = url || "";
+  let fileName = null;
+  let fileSize = null;
+  let mimeType = null;
+  let cloudinaryPublicId = null;
+
+  if (type === "Document") {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        data: null,
+        message: "A file is required for Document resources",
+      });
+    }
+
+    const result = await uploadToCloudinary(req.file, "astumsj-resources");
+
+    resourceUrl = result.secure_url;
+    fileName = req.file.originalname;
+    fileSize = req.file.size;
+    mimeType = req.file.mimetype;
+    cloudinaryPublicId = result.public_id;
+  } else if (!resourceUrl) {
+    return res.status(400).json({
+      success: false,
+      data: null,
+      message: "A URL is required for Link and Video resources",
     });
-    res
-      .status(201)
-      .json({ success: true, data: resource, message: "Resource added" });
-  
-})
+  }
+
+  const resource = await Resource.create({
+    title,
+    description,
+    type,
+    topic,
+    url: resourceUrl,
+    batch: batch || null,
+    uploadedBy: req.user.id,
+    fileName,
+    fileSize,
+    mimeType,
+    cloudinaryPublicId,
+  });
+
+  res
+    .status(201)
+    .json({ success: true, data: resource, message: "Resource added" });
+});
 
 const getResources = asyncHandler(async (req, res) => {
-    const { topic, search } = req.query;
-    const filter = {};
-    if (topic) filter.topic = topic;
-    if (search) filter.title = { $regex: search, $options: "i" };
-    const resources = await Resource.find(filter).sort({ createdAt: -1 });
-    res
-      .status(200)
-      .json({ success: true, data: resources, message: "Resources fetched" });
-  
-})
+  const { topic, type, search } = req.query;
+  const filter = {};
+
+  if (topic) filter.topic = topic;
+  if (type) filter.type = type;
+  if (search) filter.title = { $regex: search, $options: "i" };
+
+  // Students only see resources open to everyone (no batch restriction)
+  // plus resources restricted to their own batch. Admins and mentors can
+  // see every resource regardless of batch.
+  if (req.user.role === "student") {
+    const student = await User.findById(req.user.id).select("batch");
+    const batchIds = [null];
+    if (student?.batch) batchIds.push(student.batch);
+    filter.batch = { $in: batchIds };
+  }
+
+  const resources = await Resource.find(filter)
+    .populate("uploadedBy", "name role")
+    .populate("batch", "name")
+    .sort({ createdAt: -1 });
+
+  res
+    .status(200)
+    .json({ success: true, data: resources, message: "Resources fetched" });
+});
 
 const deleteResource = asyncHandler(async (req, res) => {
-    await Resource.findByIdAndDelete(req.params.id);
-    res
-      .status(200)
-      .json({ success: true, data: null, message: "Resource deleted" });
-})
+  const resource = await Resource.findById(req.params.id);
+
+  if (!resource) {
+    return res
+      .status(404)
+      .json({ success: false, data: null, message: "Resource not found" });
+  }
+
+  // Mentors may only delete resources they uploaded themselves; admins can
+  // delete any resource.
+  if (
+    req.user.role === "mentor" &&
+    resource.uploadedBy.toString() !== req.user.id
+  ) {
+    return res.status(403).json({
+      success: false,
+      data: null,
+      message: "You can only delete resources you uploaded",
+    });
+  }
+
+  if (resource.cloudinaryPublicId) {
+    try {
+      await cloudinary.uploader.destroy(resource.cloudinaryPublicId, {
+        resource_type: "auto",
+      });
+    } catch (err) {
+      // Non-fatal: still remove the database record even if the remote
+      // file cleanup fails (e.g. already removed).
+      console.error("Cloudinary cleanup failed:", err.message);
+    }
+  }
+
+  await resource.deleteOne();
+
+  res
+    .status(200)
+    .json({ success: true, data: null, message: "Resource deleted" });
+});
 
 module.exports = { createResource, getResources, deleteResource };
