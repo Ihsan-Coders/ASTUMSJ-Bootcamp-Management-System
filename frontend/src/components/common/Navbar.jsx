@@ -145,9 +145,16 @@ export default function Navbar({ minimal = false }) {
 
               {user ? (
                 <>
-                  <span className="text-sm text-text-secondary">
+                  <button
+                    onClick={() => handleNavigation("/profile")}
+                    className={`text-sm transition-colors ${
+                      location.pathname === "/profile"
+                        ? "text-gold"
+                        : "text-text-secondary hover:text-gold"
+                    }`}
+                  >
                     {user.name}
-                  </span>
+                  </button>
 
                   <button
                     onClick={handleLogout}
@@ -242,9 +249,16 @@ export default function Navbar({ minimal = false }) {
 
                   {user ? (
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-text-secondary">
+                      <button
+                        onClick={() => handleNavigation("/profile")}
+                        className={`text-sm ${
+                          location.pathname === "/profile"
+                            ? "text-gold"
+                            : "text-text-secondary hover:text-gold"
+                        }`}
+                      >
                         {user.name}
-                      </span>
+                      </button>
 
                       <button
                         onClick={handleLogout}
