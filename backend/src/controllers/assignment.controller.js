@@ -32,7 +32,19 @@ const createAssignment = asyncHandler(async (req, res) => {
 const getAssignments = asyncHandler(async (req, res) => {
   const { batchId } = req.query;
 
-  const filter = batchId ? { batch: batchId } : {};
+  let filter = {};
+
+  if (req.user.role === "student") {
+    // Students only ever see assignments scoped to their own batch,
+    // plus batch-agnostic (global) assignments. Any batchId query
+    // param is ignored for students so they cannot request another
+    // batch's assignments.
+    filter = req.user.batch
+      ? { $or: [{ batch: req.user.batch }, { batch: null }] }
+      : { batch: null };
+  } else if (batchId) {
+    filter = { batch: batchId };
+  }
 
   const assignments = await Assignment.find(filter)
     .populate("createdBy", "name email")

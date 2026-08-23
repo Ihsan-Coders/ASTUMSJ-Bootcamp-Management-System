@@ -28,7 +28,7 @@ const protect = async (req, res, next) => {
                   });
 
     const user = await User.findById(decoded.sub).select(
-      "_id name email role isActive",
+      "_id name email role isActive batch",
     );
 
     if (!user) {
@@ -52,6 +52,7 @@ const protect = async (req, res, next) => {
       role: user.role,
       name: user.name,
       email: user.email,
+      batch: user.batch ? user.batch.toString() : null,
     };
 
     next();
