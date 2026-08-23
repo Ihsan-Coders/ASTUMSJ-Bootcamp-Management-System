@@ -20,6 +20,7 @@ const ROLE_LINKS = {
     { label: "Users", path: "/admin/users" },
     { label: "Batches", path: "/admin/batches" },
     { label: "Reports", path: "/admin/reports" },
+    { label: "Resources", path: "/admin/resources" },
   ],
 
   mentor: [
@@ -27,12 +28,14 @@ const ROLE_LINKS = {
   { label: "Attendance", path: "/mentor/attendance" },
   { label: "Assignments", path: "/mentor/assignments" },
   { label: "Progress", path: "/mentor/progress" },
+  { label: "Resources", path: "/mentor/resources" },
 ],
 
   student: [
     { label: "Dashboard", path: "/student" },
     { label: "Attendance", path: "/student/attendance" },
     { label: "Progress", path: "/student/progress" },
+    { label: "Resources", path: "/student/resources" },
     { label: "Timeline", path: "/student/timeline" },
   ],
 };
