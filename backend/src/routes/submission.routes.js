@@ -3,10 +3,11 @@ const router = express.Router();
 const protect = require('../middleware/auth.middleware');
 const authorize = require('../middleware/role.middleware');
 const upload = require('../middleware/upload.middleware');
-const { createSubmission, gradeSubmission, getSubmissions } = require('../controllers/submission.controller');
+const { createSubmission,updateSubmission, gradeSubmission, getSubmissions } = require('../controllers/submission.controller');
 
 router.use(protect);
 router.post('/', authorize('student'), upload.array('attachments', 3), createSubmission);
+router.put('/:id',authorize('student'),upload.array('attachments', 3),updateSubmission);
 router.put('/:id/grade', authorize('mentor'), gradeSubmission);
 router.get('/', authorize('admin', 'mentor', 'student'), getSubmissions);
 

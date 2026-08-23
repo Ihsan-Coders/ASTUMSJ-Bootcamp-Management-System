@@ -34,6 +34,7 @@ const ROLE_LINKS = {
   student: [
     { label: "Dashboard", path: "/student" },
     { label: "Attendance", path: "/student/attendance" },
+    { label: "MyAssignments", path: "/student/myassignments" },
     { label: "Progress", path: "/student/progress" },
     { label: "Resources", path: "/student/resources" },
     { label: "Timeline", path: "/student/timeline" },

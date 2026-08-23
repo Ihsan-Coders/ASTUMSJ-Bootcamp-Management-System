@@ -16,7 +16,7 @@ import MentorDashboard from "../pages/mentor/MentorDashboard";
 import MentorAttendancePage from "../pages/mentor/MentorAttendancePage"; // real mentor mark-attendance page
 // import StudentAttendancePage from '../pages/mentor/AttendancePage'; // misplaced file, actually shows a student's own attendance
 import AssignmentsPage from "../pages/mentor/AssignmentsPage";
-
+import MyAssignments from "../pages/student/MyAssignments"
 import StudentDashboard from "../pages/student/StudentDashboard";
 import MyAttendance from "../pages/student/MyAttendance";
 import MyProgress from "../pages/student/MyProgress";
@@ -136,6 +136,15 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       />
+       <Route
+        path="/student/myassignments"
+        element={
+          <ProtectedRoute allowedRoles={["student"]}>
+            <MyAssignments />
+          </ProtectedRoute>
+        }
+      />
+
       <Route
         path="/student/progress"
         element={
