@@ -10,17 +10,20 @@ import AdminDashboard from "../pages/admin/AdminDashboard";
 import ManageUsers from "../pages/admin/ManageUsers";
 import ManageBatches from "../pages/admin/ManageBatches";
 import ReportsPage from "../pages/admin/ReportsPage";
+import MyAssignments from "../pages/student/MyAssignments";
+import ManageAnnouncements from "../pages/admin/ManageAnnouncements";
 
 import MentorDashboard from "../pages/mentor/MentorDashboard";
 // import AttendancePage from "../pages/mentor/AttendancePage";
 import MentorAttendancePage from "../pages/mentor/MentorAttendancePage"; // real mentor mark-attendance page
 // import StudentAttendancePage from '../pages/mentor/AttendancePage'; // misplaced file, actually shows a student's own attendance
 import AssignmentsPage from "../pages/mentor/AssignmentsPage";
-import MyAssignments from "../pages/student/MyAssignments"
+
 import StudentDashboard from "../pages/student/StudentDashboard";
 import MyAttendance from "../pages/student/MyAttendance";
 import MyProgress from "../pages/student/MyProgress";
 import MyTimeline from "../pages/student/MyTimeline";
+import StudentAnnouncements from "../pages/student/Announcements";
 import Profile from "../pages/student/Profile";
 
 import ResourceLibraryPage from "../pages/ResourceLibraryPage";
@@ -62,18 +65,18 @@ export default function AppRoutes() {
         }
       />
       <Route
-        path="/admin/resources"
-        element={
-          <ProtectedRoute allowedRoles={["admin"]}>
-            <ResourceLibraryPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
         path="/admin/reports"
         element={
           <ProtectedRoute allowedRoles={["admin"]}>
             <ReportsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/announcements"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <ManageAnnouncements />
           </ProtectedRoute>
         }
       />
@@ -103,19 +106,19 @@ export default function AppRoutes() {
         }
       />
       <Route
-        path="/mentor/resources"
+        path="/mentor/progress"
         element={
           <ProtectedRoute allowedRoles={["mentor"]}>
-            <ResourceLibraryPage />
+            <MentorProgressPage />
           </ProtectedRoute>
         }
       />
 
       <Route
-        path="/mentor/progress"
+        path="/mentor/announcements"
         element={
           <ProtectedRoute allowedRoles={["mentor"]}>
-            <MentorProgressPage />
+            <ManageAnnouncements />
           </ProtectedRoute>
         }
       />
@@ -168,6 +171,14 @@ export default function AppRoutes() {
         }
       />
       <Route
+        path="/student/announcements"
+        element={
+          <ProtectedRoute allowedRoles={["student"]}>
+            <StudentAnnouncements />
+          </ProtectedRoute>
+        }
+      />
+       <Route
         path="/profile"
         element={
           <ProtectedRoute>

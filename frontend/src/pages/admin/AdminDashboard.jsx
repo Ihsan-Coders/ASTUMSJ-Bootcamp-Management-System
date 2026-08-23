@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import {
   Users,
   GraduationCap,
@@ -8,7 +9,12 @@ import {
   ClipboardList,
 } from "lucide-react";
 import StatCard from "../../components/common/StatCard";
+import Loader from "../../components/common/Loader";
+import EmptyState from "../../components/common/EmptyState";
+import AnnouncementForm from "../../components/announcements/AnnouncementForm";
+import AnnouncementCard from "../../components/announcements/AnnouncementCard";
 import { getAdminDashboard } from "../../api/dashboard.api";
+import { getAnnouncements } from "../../api/announcement.api";
 
 // Fallback sample data — shown if the backend isn't ready yet or a request fails.
 // This keeps the dashboard looking complete during development or a live demo
@@ -50,8 +56,6 @@ const FALLBACK_BATCHES = [
   { id: 2, name: "Batch 3 — Spring", students: 29, status: "Completed" },
 ];
 
-const AUDIENCES = ["All", "Students", "Mentors", "Specific Batch"];
-
 function TabButton({ active, onClick, children }) {
   return (
     <button
@@ -69,11 +73,34 @@ function TabButton({ active, onClick, children }) {
 
 export default function AdminDashboard() {
   const [tab, setTab] = useState("overview");
-  const [audience, setAudience] = useState("All");
   const [stats, setStats] = useState(FALLBACK_STATS);
   const [users, setUsers] = useState(FALLBACK_USERS);
   const [batches, setBatches] = useState(FALLBACK_BATCHES);
   const [isLive, setIsLive] = useState(false); // tracks whether we're showing real or fallback data
+
+  const [recentAnnouncements, setRecentAnnouncements] = useState([]);
+  const [loadingAnnouncements, setLoadingAnnouncements] = useState(true);
+  const [announcementsError, setAnnouncementsError] = useState("");
+
+  const loadRecentAnnouncements = () => {
+    setLoadingAnnouncements(true);
+    getAnnouncements()
+      .then((res) => {
+        setRecentAnnouncements((res.data.data || []).slice(0, 5));
+        setAnnouncementsError("");
+      })
+      .catch((err) => {
+        setAnnouncementsError(
+          err?.response?.data?.message || "Failed to load announcements",
+        );
+      })
+      .finally(() => setLoadingAnnouncements(false));
+  };
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadRecentAnnouncements();
+  }, []);
 
   useEffect(() => {
     getAdminDashboard()
@@ -231,43 +258,53 @@ export default function AdminDashboard() {
       )}
 
       {tab === "announce" && (
-        <div className="glass-card glow-border rounded-xl p-5 max-w-xl">
-          <h2 className="text-text-primary font-semibold mb-4">
-            New Announcement
-          </h2>
-          <div className="space-y-3">
-            <input
-              placeholder="Title"
-              className="w-full p-2.5 rounded border border-border bg-background text-text-primary text-sm"
-            />
-            <textarea
-              placeholder="What do you want to announce?"
-              rows={3}
-              className="w-full p-2.5 rounded border border-border bg-background text-text-primary text-sm"
-            />
-            <div>
-              <p className="text-text-secondary text-xs mb-2">
-                Target audience
+        <div className="grid lg:grid-cols-[380px_1fr] gap-6 items-start">
+          <AnnouncementForm
+            mode="create"
+            onSuccess={(created) =>
+              setRecentAnnouncements((current) =>
+                [created, ...current].slice(0, 5),
+              )
+            }
+          />
+
+          <div className="glass-card glow-border rounded-xl p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-text-primary font-semibold">
+                Recent Announcements
+              </h2>
+              <Link
+                to="/admin/announcements"
+                className="text-xs text-gold hover:underline shrink-0"
+              >
+                Manage all →
+              </Link>
+            </div>
+
+            {announcementsError && (
+              <p className="text-danger text-sm mb-3">
+                {announcementsError}
               </p>
-              <div className="flex flex-wrap gap-2">
-                {AUDIENCES.map((a) => (
-                  <button
-                    key={a}
-                    onClick={() => setAudience(a)}
-                    className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
-                      audience === a
-                        ? "bg-gradient-to-r from-gold to-emerald text-obsidian border-transparent"
-                        : "border-border text-text-secondary hover:border-gold/50"
-                    }`}
-                  >
-                    {a}
-                  </button>
+            )}
+
+            {loadingAnnouncements && <Loader />}
+
+            {!loadingAnnouncements &&
+              recentAnnouncements.length === 0 &&
+              !announcementsError && (
+                <EmptyState message="No announcements yet" icon="📢" />
+              )}
+
+            {!loadingAnnouncements && recentAnnouncements.length > 0 && (
+              <div className="space-y-3">
+                {recentAnnouncements.map((announcement) => (
+                  <AnnouncementCard
+                    key={announcement._id}
+                    announcement={announcement}
+                  />
                 ))}
               </div>
-            </div>
-            <button className="w-full py-2.5 rounded font-semibold text-obsidian bg-gradient-to-r from-gold to-emerald">
-              Publish Announcement
-            </button>
+            )}
           </div>
         </div>
       )}

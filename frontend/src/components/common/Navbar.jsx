@@ -19,6 +19,7 @@ const ROLE_LINKS = {
     { label: "Dashboard", path: "/admin" },
     { label: "Users", path: "/admin/users" },
     { label: "Batches", path: "/admin/batches" },
+    { label: "Announcements", path: "/admin/announcements" },
     { label: "Reports", path: "/admin/reports" },
     { label: "Resources", path: "/admin/resources" },
   ],
@@ -27,8 +28,9 @@ const ROLE_LINKS = {
   { label: "Dashboard", path: "/mentor" },
   { label: "Attendance", path: "/mentor/attendance" },
   { label: "Assignments", path: "/mentor/assignments" },
+  { label: "Resources", path: "/mentor/Resources"},
   { label: "Progress", path: "/mentor/progress" },
-  { label: "Resources", path: "/mentor/resources" },
+  { label: "Announcements", path: "/mentor/announcements" },
 ],
 
   student: [
@@ -38,6 +40,7 @@ const ROLE_LINKS = {
     { label: "Progress", path: "/student/progress" },
     { label: "Resources", path: "/student/resources" },
     { label: "Timeline", path: "/student/timeline" },
+    { label: "Announcements", path: "/student/announcements" },
   ],
 };
 
@@ -146,16 +149,9 @@ export default function Navbar({ minimal = false }) {
 
               {user ? (
                 <>
-                  <button
-                    onClick={() => handleNavigation("/profile")}
-                    className={`text-sm transition-colors ${
-                      location.pathname === "/profile"
-                        ? "text-gold"
-                        : "text-text-secondary hover:text-gold"
-                    }`}
-                  >
+                  <span className="text-sm text-text-secondary">
                     {user.name}
-                  </button>
+                  </span>
 
                   <button
                     onClick={handleLogout}
@@ -250,16 +246,9 @@ export default function Navbar({ minimal = false }) {
 
                   {user ? (
                     <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleNavigation("/profile")}
-                        className={`text-sm ${
-                          location.pathname === "/profile"
-                            ? "text-gold"
-                            : "text-text-secondary hover:text-gold"
-                        }`}
-                      >
+                      <span className="text-sm text-text-secondary">
                         {user.name}
-                      </button>
+                      </span>
 
                       <button
                         onClick={handleLogout}

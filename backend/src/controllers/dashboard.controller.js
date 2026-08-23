@@ -7,6 +7,7 @@ const User = require("../models/User");
 const Batch = require("../models/Batch");
 const Assignment = require("../models/Assignment");
 const asyncHandler = require("../utils/asyncHandler");
+const { getVisibleAnnouncementsFilter } = require("../services/announcement.service");
 
 /**
  * =========================
@@ -452,9 +453,14 @@ const getStudentDashboard = asyncHandler(
 
     /**
      * Recent announcements
+     * Only announcements this student is actually targeted by
+     * (All / Students / their specific batch), already published.
      */
+    const announcementFilter =
+      await getVisibleAnnouncementsFilter(req.user);
+
     const recentAnnouncements =
-      await Announcement.find()
+      await Announcement.find(announcementFilter)
         .sort({
           publishDate: -1,
         })
