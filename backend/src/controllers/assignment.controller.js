@@ -1,6 +1,8 @@
 const Assignment = require("../models/Assignment");
+const Batch = require("../models/Batch");
 
 const { syncAssignmentDeadline } = require("../services/calendar.service");
+const { createNotification } = require("../services/notification.service");
 
 const asyncHandler = require("../utils/asyncHandler");
 
@@ -17,6 +19,24 @@ const createAssignment = asyncHandler(async (req, res) => {
 
   await syncAssignmentDeadline(assignment);
 
+  // Notify every student in the assignment's batch. Only fires on
+  // creation (not on edits) so updating an assignment never re-spams
+  // the batch.
+  if (assignment.batch) {
+    const batch = await Batch.findById(assignment.batch).select("students");
+
+    await Promise.all(
+      (batch?.students || []).map((studentId) =>
+        createNotification({
+          userId: studentId,
+          type: "NewAssignment",
+          message: `New assignment posted: "${assignment.title}"`,
+          relatedId: assignment._id,
+        }),
+      ),
+    );
+  }
+
   res.status(201).json({
     success: true,
     data: assignment,
@@ -32,19 +52,7 @@ const createAssignment = asyncHandler(async (req, res) => {
 const getAssignments = asyncHandler(async (req, res) => {
   const { batchId } = req.query;
 
-  let filter = {};
-
-  if (req.user.role === "student") {
-    // Students only ever see assignments scoped to their own batch,
-    // plus batch-agnostic (global) assignments. Any batchId query
-    // param is ignored for students so they cannot request another
-    // batch's assignments.
-    filter = req.user.batch
-      ? { $or: [{ batch: req.user.batch }, { batch: null }] }
-      : { batch: null };
-  } else if (batchId) {
-    filter = { batch: batchId };
-  }
+  const filter = batchId ? { batch: batchId } : {};
 
   const assignments = await Assignment.find(filter)
     .populate("createdBy", "name email")

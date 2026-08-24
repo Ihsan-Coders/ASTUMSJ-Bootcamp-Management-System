@@ -4,15 +4,35 @@ const asyncHandler = require('../utils/asyncHandler');
 // Get all notifications belonging to the currently logged-in user
 const getMyNotifications = asyncHandler(async (req, res) => {
     // Find notifications where the user is the logged-in user.
-    // Newest notifications are returned first.
-    const notifications = await Notification.find({ user: req.user.id }).sort({
-      createdAt: -1,
-    });
+    // Newest notifications are returned first. Capped to the most
+    // recent 50 so the feed stays fast as history grows.
+    const notifications = await Notification.find({ user: req.user.id })
+      .sort({
+        createdAt: -1,
+      })
+      .limit(50);
 
     res.status(200).json({
       success: true,
       data: notifications,
       message: "Notifications fetched",
+    });
+})
+
+// Get the unread notification count for the currently logged-in user.
+// Kept separate from getMyNotifications (which is capped to 50) so the
+// badge count stays accurate even if a user has more unread items than
+// the capped list would show.
+const getUnreadCount = asyncHandler(async (req, res) => {
+    const count = await Notification.countDocuments({
+      user: req.user.id,
+      isRead: false,
+    });
+
+    res.status(200).json({
+      success: true,
+      data: { count },
+      message: "Unread count fetched",
     });
 })
 
@@ -75,6 +95,7 @@ const markAllAsRead = asyncHandler(async (req, res) => {
 // Export the controller functions so the routes can use them.
 module.exports = {
   getMyNotifications,
+  getUnreadCount,
   markAsRead,
   markAllAsRead,
 };
