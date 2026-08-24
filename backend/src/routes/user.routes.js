@@ -8,6 +8,7 @@ const {
   changePassword,
   getUsers,
   createUser,
+  createMentor,
   updateUser,
   deleteUser,
   getPendingUsers,
@@ -36,6 +37,7 @@ router.put('/me/password',validate(changePasswordSchema),changePassword);
 router.use(authorize('admin'));
 router.get('/', getUsers);
 router.post('/',validate(createUserSchema), createUser);
+router.post('/mentors', validate(createUserSchema), createMentor);
 router.get('/pending', getPendingUsers);
 router.put('/:id',validateObjectId,validate(updateUserSchema), updateUser);
 router.put('/:id/approve',validateObjectId, approveUser);

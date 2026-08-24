@@ -1,38 +1,61 @@
 import { useState } from 'react';
-import { createUser } from '../../api/user.api';
+import { createMentor } from '../../api/user.api';
 
-const EMPTY_FORM = { name: '', email: '', password: '' };
-export default function UserForm({ onCreated }) {
+const EMPTY_FORM = {
+  name: '',
+  email: '',
+  password: '',
+};
+
+export default function MentorForm({ onCreated }) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value,
+    });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
     setError('');
+
     try {
-      await createUser(form);
+      await createMentor(form);
+
       setForm(EMPTY_FORM);
       onCreated?.();
     } catch (err) {
-      setError(err?.response?.data?.message || 'Failed to create user');
+      setError(
+        err?.response?.data?.message || 'Failed to create mentor'
+      );
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="glass-card glow-border rounded-lg p-6 space-y-3">
-      <h3 className="text-lg font-semibold text-text-primary">Create User</h3>
+    <form
+      onSubmit={handleSubmit}
+      className="glass-card glow-border rounded-lg p-6 space-y-3"
+    >
+      <h3 className="text-lg font-semibold text-text-primary">
+        Create Mentor
+      </h3>
+
       <p className="text-xs text-text-secondary -mt-2">
-        New users are created with the "student" role. Mentors/admins are promoted separately.
+        Create a new mentor account directly. The mentor role is assigned automatically.
       </p>
 
       <div>
-        <label className="block text-xs text-text-secondary mb-1">Full Name</label>
+        <label className="block text-xs text-text-secondary mb-1">
+          Full Name
+        </label>
+
         <input
           type="text"
           name="name"
@@ -45,7 +68,10 @@ export default function UserForm({ onCreated }) {
       </div>
 
       <div>
-        <label className="block text-xs text-text-secondary mb-1">Email</label>
+        <label className="block text-xs text-text-secondary mb-1">
+          Email
+        </label>
+
         <input
           type="email"
           name="email"
@@ -57,7 +83,10 @@ export default function UserForm({ onCreated }) {
       </div>
 
       <div>
-        <label className="block text-xs text-text-secondary mb-1">Temporary Password</label>
+        <label className="block text-xs text-text-secondary mb-1">
+          Temporary Password
+        </label>
+
         <input
           type="password"
           name="password"
@@ -69,14 +98,18 @@ export default function UserForm({ onCreated }) {
         />
       </div>
 
-      {error && <p className="text-danger text-sm">{error}</p>}
+      {error && (
+        <p className="text-danger text-sm">
+          {error}
+        </p>
+      )}
 
       <button
         type="submit"
         disabled={submitting}
         className="w-full py-2 rounded font-semibold text-obsidian bg-gradient-to-r from-gold to-emerald disabled:opacity-60"
       >
-        {submitting ? 'Creating…' : 'Create User'}
+        {submitting ? 'Creating…' : 'Create Mentor'}
       </button>
     </form>
   );

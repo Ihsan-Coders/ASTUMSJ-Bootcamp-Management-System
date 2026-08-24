@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import UserForm from '../../components/admin/UserForm';
+import MentorForm from '../../components/admin/MentorForm';
 import UserTable from '../../components/admin/UserTable';
 
-export default function ManageUsers() {
+
+export default function ManageMentors() {
   const [refreshKey, setRefreshKey] = useState(0);
   const bumpRefresh = () => setRefreshKey((k) => k + 1);
 
@@ -13,7 +14,7 @@ export default function ManageUsers() {
       </h1>
 
       <div className="grid lg:grid-cols-[320px_1fr] gap-6 items-start">
-        <UserForm onCreated={bumpRefresh} />
+        <MentorForm onCreated={bumpRefresh} />
         <UserTable refreshKey={refreshKey} />
       </div>
     </div>

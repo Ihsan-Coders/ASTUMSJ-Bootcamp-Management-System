@@ -30,6 +30,7 @@ import ResourceLibraryPage from "../pages/ResourceLibraryPage";
 import AlumniPage from "../pages/AlumniPage";
 import LeaderboardPage from "../pages/LeaderboardPage";
 
+
 export default function AppRoutes() {
   return (
     <Routes>
@@ -105,7 +106,7 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       />
-      <Route
+       <Route
         path="/mentor/progress"
         element={
           <ProtectedRoute allowedRoles={["mentor"]}>
@@ -113,12 +114,19 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       />
-
       <Route
-        path="/mentor/announcements"
+        path="/mentor/resources"
         element={
           <ProtectedRoute allowedRoles={["mentor"]}>
-            <ManageAnnouncements />
+            <ResourceLibraryPage />
+          </ProtectedRoute>
+        }
+      />
+       <Route
+        path="/mentor/assignments"
+        element={
+          <ProtectedRoute allowedRoles={["mentor"]}>
+            <AssignmentsPage />
           </ProtectedRoute>
         }
       />
