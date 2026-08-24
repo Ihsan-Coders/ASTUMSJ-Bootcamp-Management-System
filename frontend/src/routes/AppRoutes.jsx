@@ -23,7 +23,7 @@ import StudentDashboard from "../pages/student/StudentDashboard";
 import MyAttendance from "../pages/student/MyAttendance";
 import MyProgress from "../pages/student/MyProgress";
 import MyTimeline from "../pages/student/MyTimeline";
-//import Profile from "../pages/student/Profile";
+import Profile from "../pages/student/Profile";
 
 import ResourceLibraryPage from "../pages/ResourceLibraryPage";
 import AlumniPage from "../pages/AlumniPage";
@@ -73,6 +73,14 @@ export default function AppRoutes() {
         }
       />
       <Route
+        path="admin/calendar"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <CalendarPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/admin/announcements"
         element={
           <ProtectedRoute allowedRoles={["admin"]}>
@@ -80,6 +88,14 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="admin/profile"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <Profile />
+          </ProtectedRoute>
+        }
+      /> 
 
       <Route
         path="/mentor"
@@ -122,13 +138,21 @@ export default function AppRoutes() {
         }
       />
        <Route
-        path="/mentor/assignments"
+        path="mentor/calendar"
         element={
-          <ProtectedRoute allowedRoles={["mentor"]}>
-            <AssignmentsPage />
+          <ProtectedRoute allowedRoles={["admin", "mentor", "student"]}>
+            <CalendarPage />
           </ProtectedRoute>
         }
       />
+      <Route
+        path="mentor/profile"
+        element={
+          <ProtectedRoute allowedRoles={["mentor"]}>
+            <Profile />
+          </ProtectedRoute>
+        }
+      /> 
 
       <Route
         path="/student"
@@ -185,23 +209,22 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       />
-      {/* <Route
-        path="/profile"
-        element={
-          <ProtectedRoute>
-            <Profile />
-          </ProtectedRoute>
-        }
-      /> */}
-
       <Route
         path="/calendar"
         element={
-          <ProtectedRoute allowedRoles={["admin", "mentor", "student"]}>
+          <ProtectedRoute allowedRoles={["student"]}>
             <CalendarPage />
           </ProtectedRoute>
         }
       />
+      <Route
+        path="student/profile"
+        element={
+          <ProtectedRoute allowedRoles={["student"]}>
+            <Profile />
+          </ProtectedRoute>
+        }
+      /> 
 
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
