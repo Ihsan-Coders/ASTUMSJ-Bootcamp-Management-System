@@ -128,6 +128,39 @@ const createUser = asyncHandler(async (req, res) => {
     res.status(201).json({ success: true, data: { ...user._doc, password: undefined }, message: 'User created' });
 })
 
+const createMentor = asyncHandler(async (req, res) => {
+  const { name, email, password } = req.body;
+
+  const existing = await User.findOne({ email });
+
+  if (existing) {
+    return res.status(400).json({
+      success: false,
+      data: null,
+      message: 'Email already in use',
+    });
+  }
+
+  const hashedPassword = await hashPassword(password);
+
+  const mentor = await User.create({
+    name,
+    email,
+    password: hashedPassword,
+    role: 'mentor',
+    isActive: true,
+  });
+
+  const mentorData = mentor.toObject();
+  delete mentorData.password;
+
+  res.status(201).json({
+    success: true,
+    data: mentorData,
+    message: 'Mentor created',
+  });
+});
+
 const updateUser = asyncHandler(async (req, res) => {
     const updates = getAllowedUserUpdates(req.body);
     const user = await User.findByIdAndUpdate(req.params.id, updates, { new: true, runValidators: true }).select('-password');
@@ -167,6 +200,7 @@ module.exports = {
   changePassword,
   getUsers,
   createUser,
+  createMentor,
   updateUser,
   deleteUser,
   getPendingUsers,

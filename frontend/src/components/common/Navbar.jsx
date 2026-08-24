@@ -31,7 +31,6 @@ const ROLE_LINKS = {
   { label: "Assignments", path: "/mentor/assignments" },
   { label: "Resources", path: "/mentor/Resources"},
   { label: "Progress", path: "/mentor/progress" },
-  { label: "Announcements", path: "/mentor/announcements" },
 ],
 
   student: [
