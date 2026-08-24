@@ -10,10 +10,10 @@ import AdminDashboard from "../pages/admin/AdminDashboard";
 import ManageUsers from "../pages/admin/ManageUsers";
 import ManageBatches from "../pages/admin/ManageBatches";
 import ReportsPage from "../pages/admin/ReportsPage";
-import MyAssignments from "../pages/student/MyAssignments";
+
 import ManageAnnouncements from "../pages/admin/ManageAnnouncements";
 import MentorDashboard from "../pages/mentor/MentorDashboard";
-// import AttendancePage from "../pages/mentor/AttendancePage";
+import ManageAlumni from "../pages/admin/ManageAlumni";
 import MentorAttendancePage from "../pages/mentor/MentorAttendancePage"; // real mentor mark-attendance page
 // import StudentAttendancePage from '../pages/mentor/AttendancePage'; // misplaced file, actually shows a student's own attendance
 import AssignmentsPage from "../pages/mentor/AssignmentsPage";
@@ -23,6 +23,7 @@ import MyAttendance from "../pages/student/MyAttendance";
 import MyProgress from "../pages/student/MyProgress";
 import MyTimeline from "../pages/student/MyTimeline";
 import Announcements from "../pages/student/Announcements"
+import MyAssignments from "../pages/student/MyAssignments";
 import Profile from "../pages/student/Profile";
 
 import ResourceLibraryPage from "../pages/ResourceLibraryPage";
@@ -77,6 +78,14 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={["admin"]}>
             <ResourceLibraryPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/alumni"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <ManageAlumni />
           </ProtectedRoute>
         }
       />

@@ -9,6 +9,7 @@ import {
   Layers,
   Megaphone,
   BarChart3,
+  GraduationCap,
   BookOpen,
   ClipboardCheck,
   Crown,
@@ -48,6 +49,11 @@ const ROLE_LINKS = {
       label: "Batches",
       path: "/admin/batches",
       icon: Layers,
+    },
+    {
+      label: "Alumni",
+      path: "/admin/alumni",
+      icon: GraduationCap,
     },
     {
       label: "Announcements",

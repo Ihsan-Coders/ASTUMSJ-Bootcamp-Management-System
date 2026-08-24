@@ -4,14 +4,16 @@ import Tracks from "../components/landing/Tracks";
 import Mentors from "../components/landing/Mentors";
 import FAQ from "../components/landing/FAQ";
 import Contact from "../components/landing/Contact";
-import Alumni from "../pages/AlumniPage"
+import Alumni from "./AlumniPage";
 
 export default function LandingPage() {
   return (
     <div>
       <Hero />
       <About />
-      <Alumni />
+      <section id="alumni">
+  <Alumni />
+</section>
       <Tracks />
       <Mentors />
       <FAQ />
