@@ -23,13 +23,12 @@ import StudentDashboard from "../pages/student/StudentDashboard";
 import MyAttendance from "../pages/student/MyAttendance";
 import MyProgress from "../pages/student/MyProgress";
 import MyTimeline from "../pages/student/MyTimeline";
-import StudentAnnouncements from "../pages/student/Announcements";
-import Profile from "../pages/student/Profile";
+//import Profile from "../pages/student/Profile";
 
 import ResourceLibraryPage from "../pages/ResourceLibraryPage";
 import AlumniPage from "../pages/AlumniPage";
 import LeaderboardPage from "../pages/LeaderboardPage";
-
+import CalendarPage from "../pages/CalendarPage";
 
 export default function AppRoutes() {
   return (
@@ -106,7 +105,7 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       />
-       <Route
+      <Route
         path="/mentor/progress"
         element={
           <ProtectedRoute allowedRoles={["mentor"]}>
@@ -136,6 +135,14 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={["student"]}>
             <StudentDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/assignments"
+        element={
+          <ProtectedRoute allowedRoles={["student"]}>
+            <MyAssignments />
           </ProtectedRoute>
         }
       />
@@ -178,19 +185,20 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       />
-      <Route
-        path="/student/announcements"
-        element={
-          <ProtectedRoute allowedRoles={["student"]}>
-            <StudentAnnouncements />
-          </ProtectedRoute>
-        }
-      />
-       <Route
+      {/* <Route
         path="/profile"
         element={
           <ProtectedRoute>
             <Profile />
+          </ProtectedRoute>
+        }
+      /> */}
+
+      <Route
+        path="/calendar"
+        element={
+          <ProtectedRoute allowedRoles={["admin", "mentor", "student"]}>
+            <CalendarPage />
           </ProtectedRoute>
         }
       />
