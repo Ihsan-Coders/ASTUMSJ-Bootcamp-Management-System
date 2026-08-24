@@ -5,7 +5,32 @@ const authorize = require("../middleware/role.middleware");
 const {
   createAlumniProfile,
   getPublicAlumni,
+  updateAlumniProfile,
+  deleteAlumniProfile,
 } = require("../controllers/alumni.controller");
-router.get("/", getPublicAlumni); // public — no login needed, this is the public alumni page
-router.post("/", protect, authorize("admin"), createAlumniProfile);
+const validateObjectId = require("../middleware/validateObjectId.middleware");
+router.get("/", getPublicAlumni);
+
+router.post(
+  "/",
+  protect,
+  authorize("admin"),
+  createAlumniProfile
+);
+
+router.put(
+  "/:id",
+  protect,
+  authorize("admin"),
+  validateObjectId,
+  updateAlumniProfile
+);
+
+router.delete(
+  "/:id",
+  protect,
+  authorize("admin"),
+  validateObjectId,
+  deleteAlumniProfile
+);
 module.exports = router;
