@@ -11,6 +11,7 @@ import {
   BarChart3,
   BookOpen,
   ClipboardCheck,
+  Crown,
   ClipboardList,
   TrendingUp,
   CalendarDays,
@@ -24,6 +25,7 @@ import { useAuth } from "../../context/AuthContext";
 const PUBLIC_LINKS = [
   { label: "Home", href: "#home" },
   { label: "About", href: "#about" },
+  { label: "Alumni", href: "#alumni" },
   { label: "Tracks", href: "#tracks" },
   { label: "Mentors", href: "#mentors" },
   { label: "FAQ", href: "#faq" },
@@ -68,6 +70,11 @@ const ROLE_LINKS = {
       icon: CalendarDays,
     },
     {
+      label: "Leaderboard",
+      path: "/admin/leaderboard",
+      icon: Crown,
+    },
+    {
       label: "Profile",
       path: "/admin/profile",
       icon: Users,
@@ -104,6 +111,11 @@ const ROLE_LINKS = {
       label: "Progress",
       path: "/mentor/progress",
       icon: TrendingUp,
+    },
+    {
+      label: "Leaderboard",
+      path: "/mentor/leaderboard",
+      icon: Crown,
     },
     {
       label: "Profile",
@@ -144,14 +156,19 @@ const ROLE_LINKS = {
       icon: CalendarDays,
     },
     {
+      label: "Announcements",
+      path: "/student/announcements",
+      icon: Megaphone,
+    },
+    {
       label: "Timeline",
       path: "/student/timeline",
       icon: CalendarDays,
     },
     {
-      label: "Announcements",
-      path: "/student/announcements",
-      icon: Megaphone,
+      label: "Leaderboard",
+      path: "/student/leaderboard",
+      icon: Crown,
     },
     {
       label: "Profile",

@@ -12,7 +12,6 @@ import ManageBatches from "../pages/admin/ManageBatches";
 import ReportsPage from "../pages/admin/ReportsPage";
 import MyAssignments from "../pages/student/MyAssignments";
 import ManageAnnouncements from "../pages/admin/ManageAnnouncements";
-
 import MentorDashboard from "../pages/mentor/MentorDashboard";
 // import AttendancePage from "../pages/mentor/AttendancePage";
 import MentorAttendancePage from "../pages/mentor/MentorAttendancePage"; // real mentor mark-attendance page
@@ -23,6 +22,7 @@ import StudentDashboard from "../pages/student/StudentDashboard";
 import MyAttendance from "../pages/student/MyAttendance";
 import MyProgress from "../pages/student/MyProgress";
 import MyTimeline from "../pages/student/MyTimeline";
+import Announcements from "../pages/student/Announcements"
 import Profile from "../pages/student/Profile";
 
 import ResourceLibraryPage from "../pages/ResourceLibraryPage";
@@ -73,7 +73,15 @@ export default function AppRoutes() {
         }
       />
       <Route
-        path="admin/calendar"
+        path="/admin/resources"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <ResourceLibraryPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/calendar"
         element={
           <ProtectedRoute allowedRoles={["admin"]}>
             <CalendarPage />
@@ -89,7 +97,15 @@ export default function AppRoutes() {
         }
       />
       <Route
-        path="admin/profile"
+        path="/admin/leaderboard"
+        element={
+          <ProtectedRoute allowedRoles={["admin", "mentor", "student"]}>
+            <LeaderboardPage />
+          </ProtectedRoute>
+        }
+      /> 
+      <Route
+        path="/admin/profile"
         element={
           <ProtectedRoute allowedRoles={["admin"]}>
             <Profile />
@@ -138,15 +154,23 @@ export default function AppRoutes() {
         }
       />
        <Route
-        path="mentor/calendar"
+        path="/mentor/calendar"
         element={
-          <ProtectedRoute allowedRoles={["admin", "mentor", "student"]}>
+          <ProtectedRoute allowedRoles={["mentor"]}>
             <CalendarPage />
           </ProtectedRoute>
         }
       />
       <Route
-        path="mentor/profile"
+        path="/mentor/leaderboard"
+        element={
+          <ProtectedRoute allowedRoles={["admin", "mentor", "student"]}>
+            <LeaderboardPage />
+          </ProtectedRoute>
+        }
+      /> 
+      <Route
+        path="/mentor/profile"
         element={
           <ProtectedRoute allowedRoles={["mentor"]}>
             <Profile />
@@ -159,14 +183,6 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={["student"]}>
             <StudentDashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/student/assignments"
-        element={
-          <ProtectedRoute allowedRoles={["student"]}>
-            <MyAssignments />
           </ProtectedRoute>
         }
       />
@@ -198,7 +214,9 @@ export default function AppRoutes() {
       <Route
         path="/student/resources"
         element={
-            <ResourceLibraryPage />
+          <ProtectedRoute allowedRoles={["student"]}>
+            <ResourceLibraryPage/>
+            </ProtectedRoute >
         }
       />
       <Route
@@ -210,7 +228,7 @@ export default function AppRoutes() {
         }
       />
       <Route
-        path="/calendar"
+        path="/student/calendar"
         element={
           <ProtectedRoute allowedRoles={["student"]}>
             <CalendarPage />
@@ -218,7 +236,23 @@ export default function AppRoutes() {
         }
       />
       <Route
-        path="student/profile"
+        path="/student/announcements"
+        element={
+          <ProtectedRoute allowedRoles={["student"]}>
+            <Announcements />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/leaderboard"
+        element={
+          <ProtectedRoute allowedRoles={["admin", "mentor", "student"]}>
+            <LeaderboardPage />
+          </ProtectedRoute>
+        }
+      /> 
+      <Route
+        path="/student/profile"
         element={
           <ProtectedRoute allowedRoles={["student"]}>
             <Profile />
