@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import DarkModeToggle from "./DarkModeToggle";
+import NotificationBell from "../notifications/NotificationBell";
 import { useAuth } from "../../context/AuthContext";
 
 const PUBLIC_LINKS = [
@@ -149,6 +150,8 @@ export default function Navbar({ minimal = false }) {
 
               {user ? (
                 <>
+                  <NotificationBell />
+
                   <span className="text-sm text-text-secondary">
                     {user.name}
                   </span>
@@ -246,6 +249,8 @@ export default function Navbar({ minimal = false }) {
 
                   {user ? (
                     <div className="flex items-center gap-2">
+                      <NotificationBell />
+
                       <span className="text-sm text-text-secondary">
                         {user.name}
                       </span>

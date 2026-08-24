@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const Batch = require('../models/Batch');
 
 /**
  * Build the MongoDB filter that determines which announcements a given
@@ -39,4 +40,37 @@ const getVisibleAnnouncementsFilter = async (user) => {
   };
 };
 
-module.exports = { getVisibleAnnouncementsFilter };
+/**
+ * Resolve which user IDs should be notified when a new announcement is
+ * published, based on its targetAudience. Mirrors the audience segments
+ * defined on the Announcement model itself (students / mentors, not
+ * other admins — admins are the ones publishing, not a notification
+ * audience segment).
+ */
+const getAnnouncementRecipientIds = async (announcement) => {
+  let studentIds = [];
+  let mentorIds = [];
+
+  if (announcement.targetAudience === 'Students') {
+    const students = await User.find({ role: 'student' }).select('_id');
+    studentIds = students.map((u) => u._id);
+  } else if (announcement.targetAudience === 'Mentors') {
+    const mentors = await User.find({ role: 'mentor' }).select('_id');
+    mentorIds = mentors.map((u) => u._id);
+  } else if (announcement.targetAudience === 'SpecificBatch' && announcement.batch) {
+    const [students, batch] = await Promise.all([
+      User.find({ role: 'student', batch: announcement.batch }).select('_id'),
+      Batch.findById(announcement.batch).select('mentors'),
+    ]);
+    studentIds = students.map((u) => u._id);
+    mentorIds = batch?.mentors || [];
+  } else {
+    // "All"
+    const users = await User.find({ role: { $in: ['student', 'mentor'] } }).select('_id');
+    studentIds = users.map((u) => u._id);
+  }
+
+  return [...new Set([...studentIds, ...mentorIds].map((id) => String(id)))];
+};
+
+module.exports = { getVisibleAnnouncementsFilter, getAnnouncementRecipientIds };

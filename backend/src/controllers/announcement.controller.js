@@ -1,6 +1,10 @@
 const Announcement = require("../models/Announcement");
 const asyncHandler = require("../utils/asyncHandler");
-const { getVisibleAnnouncementsFilter } = require("../services/announcement.service");
+const {
+  getVisibleAnnouncementsFilter,
+  getAnnouncementRecipientIds,
+} = require("../services/announcement.service");
+const { createNotification } = require("../services/notification.service");
 
 // ======================================================
 // CREATE ANNOUNCEMENT
@@ -22,6 +26,22 @@ const createAnnouncement = asyncHandler(async (req, res) => {
 
   await announcement.populate("createdBy", "name email");
   await announcement.populate("batch", "name");
+
+  // Notify the announcement's actual audience. Only fires on creation
+  // (not on edits) so updating an announcement never re-spams everyone.
+  const recipientIds = await getAnnouncementRecipientIds(announcement);
+  const notifyIds = recipientIds.filter((id) => id !== String(req.user.id));
+
+  await Promise.all(
+    notifyIds.map((userId) =>
+      createNotification({
+        userId,
+        type: "Announcement",
+        message: `New announcement: "${announcement.title}"`,
+        relatedId: announcement._id,
+      }),
+    ),
+  );
 
   res.status(201).json({
     success: true,
