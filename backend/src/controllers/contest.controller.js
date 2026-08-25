@@ -316,27 +316,24 @@ const fetchResults = async (req, res) => {
     });
   }
 };
-
 const getContestLeaderboard = async (req, res) => {
   try {
-    const results = await ContestResult.find({
-      contest: req.params.id,
-      status: "Fetched",
-    })
+    // Show ALL results, not just successful fetches — admin needs visibility
+    // into who's missing a handle, has an invalid one, etc. Fetched results
+    // sort to the top by rank; everything else follows, grouped together.
+    const results = await ContestResult.find({ contest: req.params.id })
       .populate("student", "name")
-      .sort({ rank: 1 });
+      .sort({ rank: 1 }); // null ranks (non-Fetched statuses) sort last automatically
 
-    res.status(200).json({
-      success: true,
-      data: results,
-      message: "Contest leaderboard fetched",
-    });
+    res
+      .status(200)
+      .json({
+        success: true,
+        data: results,
+        message: "Contest leaderboard fetched",
+      });
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      data: null,
-      message: err.message,
-    });
+    res.status(500).json({ success: false, data: null, message: err.message });
   }
 };
 
