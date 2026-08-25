@@ -1,4 +1,4 @@
-const Joi = require('joi');
+const Joi = require("joi");
 
 const createUserSchema = Joi.object({
   name: Joi.string().min(2).required(),
@@ -9,6 +9,7 @@ const updateUserSchema = Joi.object({
   name: Joi.string().trim().min(2).max(100),
   email: Joi.string().trim().lowercase().email(),
   batch: Joi.string().hex().length(24).allow(null),
+  codeforcesHandle: Joi.string().trim().allow(""),
 }).min(1);
 
 // Self-service "my profile" update. Deliberately excludes role, batch,
@@ -22,16 +23,13 @@ const updateMeSchema = Joi.object({
 const changePasswordSchema = Joi.object({
   currentPassword: Joi.string().required(),
 
-  newPassword: Joi.string()
-    .min(8)
-    .required()
-    .messages({
-      'string.min': 'New password must be at least 8 characters',
-    }),
+  newPassword: Joi.string().min(8).required().messages({
+    "string.min": "New password must be at least 8 characters",
+  }),
 }).custom((value, helpers) => {
   if (value.currentPassword === value.newPassword) {
     return helpers.message(
-      'New password must be different from the current password'
+      "New password must be different from the current password",
     );
   }
 
