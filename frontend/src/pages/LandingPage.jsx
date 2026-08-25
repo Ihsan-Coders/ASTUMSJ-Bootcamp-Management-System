@@ -12,8 +12,8 @@ export default function LandingPage() {
       <Hero />
       <About />
       <section id="alumni">
-  <Alumni />
-</section>
+        <Alumni />
+      </section>
       <Tracks />
       <Mentors />
       <FAQ />
