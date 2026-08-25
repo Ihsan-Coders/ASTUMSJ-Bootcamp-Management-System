@@ -6,6 +6,7 @@ import {
   updateAlumniProfile,
   deleteAlumniProfile,
 } from "../../api/alumni.api";
+import { useConfirm } from "../../context/ConfirmContext";
 
 export default function AlumniManagement() {
   const [alumni, setAlumni] = useState([]);
@@ -13,6 +14,7 @@ export default function AlumniManagement() {
   const [editingAlumni, setEditingAlumni] = useState(null);
   const [error, setError] = useState("");
   const [deletingId, setDeletingId] = useState(null);
+  const confirm = useConfirm();
 
   const fetchAlumni = async () => {
     try {
@@ -41,8 +43,9 @@ export default function AlumniManagement() {
   };
 
   const handleDelete = async (id) => {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this alumni profile?"
+    const confirmed = await confirm(
+      "Are you sure you want to delete this alumni profile?",
+      { title: "Delete Alumni Profile", confirmLabel: "Delete" }
     );
 
     if (!confirmed) return;
