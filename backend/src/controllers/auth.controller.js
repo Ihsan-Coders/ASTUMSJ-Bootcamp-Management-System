@@ -11,21 +11,6 @@ const asyncHandler = require('../utils/asyncHandler');
 const register = asyncHandler(async (req, res) => {
     const { name, email, password } = req.body;
 
-    if (!name || !email || !password) {
-      return res.status(400).json({
-        success: false,
-        data: null,
-        message: 'Name, email, and password are required',
-      });
-    }
-
-    if (password.length < 8) {
-      return res.status(400).json({
-        success: false,
-        data: null,
-        message: 'Password must be at least 8 characters',
-      });
-    }
 
     const normalizedEmail = email.toLowerCase().trim();
 
@@ -73,13 +58,7 @@ const register = asyncHandler(async (req, res) => {
 const login = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        data: null,
-        message: 'Email and password are required',
-      });
-    }
+    
 
     const normalizedEmail = email.toLowerCase().trim();
 

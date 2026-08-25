@@ -1,6 +1,5 @@
 const User = require('../models/User');
-const bcrypt = require('bcryptjs');
-const { hashPassword } = require('../utils/hashPassword');
+const { hashPassword, comparePassword } = require('../utils/hashPassword');
 const allowedUserFields = ['name', 'email', 'batch'];
 const asyncHandler = require('../utils/asyncHandler');
 
@@ -83,7 +82,7 @@ const changePassword = asyncHandler(async (req, res) => {
     });
   }
 
-const isCurrentPasswordValid = await bcrypt.compare(
+const isCurrentPasswordValid = await comparePassword(
   currentPassword,
   user.password
 );

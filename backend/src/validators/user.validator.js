@@ -1,9 +1,10 @@
 const Joi = require('joi');
+const { strongPassword } = require('./password.rules');
 
 const createUserSchema = Joi.object({
   name: Joi.string().min(2).required(),
   email: Joi.string().email().required(),
-  password: Joi.string().min(8).required(),
+  password: strongPassword,
 });
 const updateUserSchema = Joi.object({
   name: Joi.string().trim().min(2).max(100),
@@ -22,10 +23,7 @@ const updateMeSchema = Joi.object({
 const changePasswordSchema = Joi.object({
   currentPassword: Joi.string().required(),
 
-  newPassword: Joi.string()
-    .min(8)
-    .required()
-    .messages({
+  newPassword: strongPassword.messages({
       'string.min': 'New password must be at least 8 characters',
     }),
 }).custom((value, helpers) => {
