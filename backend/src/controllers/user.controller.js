@@ -28,10 +28,7 @@ const getMe = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, data: user, message: 'Profile fetched' });
 });
 
-// PUT /api/users/me — self-service profile update. Only the fields listed
-// here can ever be changed through this endpoint: role, batch, isActive
-// (approval status) and password are intentionally excluded and are
-// admin-controlled elsewhere.
+
 const selfEditableFields = ['name', 'email'];
 
 const updateMe = asyncHandler(async (req, res) => {

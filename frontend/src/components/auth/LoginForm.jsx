@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import {Link, useNavigate } from "react-router-dom";
 import { loginUser } from "../../api/auth.api";
 import { useAuth } from "../../context/AuthContext";
 
@@ -100,6 +100,12 @@ export default function LoginForm() {
         className="w-full p-2 mb-4 rounded border border-border bg-background text-text-primary"
       />
 
+      <div className="text-right mb-4">
+        <Link to="/forgot-password" className="text-sm text-gold hover:underline">
+          Forgot password?
+        </Link>
+      </div>
+      
       <button
         type="submit"
         disabled={loading}
