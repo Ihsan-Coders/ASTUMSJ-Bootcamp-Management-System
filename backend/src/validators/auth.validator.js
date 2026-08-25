@@ -29,7 +29,21 @@ const loginSchema = Joi.object({
     .required(),
 });
 
+const forgotPasswordSchema = Joi.object({
+  email: Joi.string()
+    .trim()
+    .lowercase()
+    .email()
+    .required(),
+});
+
+const resetPasswordSchema = Joi.object({
+  password: strongPassword,
+});
+
 module.exports = {
   registerSchema,
   loginSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
 };

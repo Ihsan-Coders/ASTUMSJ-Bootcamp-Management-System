@@ -12,9 +12,6 @@ const updateUserSchema = Joi.object({
   batch: Joi.string().hex().length(24).allow(null),
 }).min(1);
 
-// Self-service "my profile" update. Deliberately excludes role, batch,
-// isActive (approval status) and password — those are admin-controlled or
-// have their own dedicated flows.
 const updateMeSchema = Joi.object({
   name: Joi.string().trim().min(2).max(100),
   email: Joi.string().trim().lowercase().email(),

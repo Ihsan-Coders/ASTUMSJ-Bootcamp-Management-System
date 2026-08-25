@@ -1,8 +1,8 @@
 import { useState } from "react";
+import {Link, useNavigate } from "react-router-dom";
 import { loginUser } from "../../api/auth.api";
 import { useAuth } from "../../context/AuthContext";
 import RotateOnceLogo from "../common/RotateOnceLogo";
-import { useNavigate } from "react-router-dom";
 export default function LoginForm() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
@@ -58,6 +58,13 @@ export default function LoginForm() {
         autoComplete="current-password"
         className="w-full p-2 mb-4 rounded border border-border bg-background text-text-primary"
       />
+
+      <div className="text-right mb-4">
+        <Link to="/forgot-password" className="text-sm text-gold hover:underline">
+          Forgot password?
+        </Link>
+      </div>
+      
       <button
         type="submit"
         className="w-full py-2 rounded font-semibold text-obsidian bg-gradient-to-r from-gold to-emerald hover:shadow-[0_0_20px_rgba(212,175,55,0.35)] transition-shadow"
