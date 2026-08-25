@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react";
 import Table from "../common/Table";
 import { getBatches, deleteBatch } from "../../api/batch.api";
+import { useToast } from "../../context/ToastContext";
+import { useConfirm } from "../../context/ConfirmContext";
 
 export default function BatchTable({ refreshKey }) {
   const [batches, setBatches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const { showToast } = useToast();
+  const confirm = useConfirm();
 
   const fetchBatches = () => {
     setLoading(true);
@@ -25,12 +29,16 @@ export default function BatchTable({ refreshKey }) {
   }, [refreshKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Delete this batch? This cannot be undone.")) return;
+    const confirmed = await confirm("Delete this batch? This cannot be undone.", {
+      title: "Delete Batch",
+      confirmLabel: "Delete",
+    });
+    if (!confirmed) return;
     try {
       await deleteBatch(id);
       fetchBatches();
     } catch (err) {
-      alert(err?.response?.data?.message || "Failed to delete batch");
+      showToast(err?.response?.data?.message || "Failed to delete batch", "error");
     }
   };
 

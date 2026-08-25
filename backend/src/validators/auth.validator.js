@@ -1,4 +1,5 @@
 const Joi = require('joi');
+const { strongPassword } = require('./password.rules');
 
 const registerSchema = Joi.object({
   name: Joi.string()
@@ -13,10 +14,7 @@ const registerSchema = Joi.object({
     .email()
     .required(),
 
-  password: Joi.string()
-    .min(8)
-    .max(128)
-    .required(),
+  password: strongPassword,
 });
 
 const loginSchema = Joi.object({

@@ -257,8 +257,7 @@ export default function Navbar({ minimal = false }) {
   const location = useLocation();
 
   const isAuthPage =
-    location.pathname === "/login" ||
-    location.pathname === "/register";
+    location.pathname === "/login" || location.pathname === "/register";
 
   const showMinimal = minimal || isAuthPage;
 
@@ -496,7 +495,6 @@ export default function Navbar({ minimal = false }) {
                    bg-gradient-to-b from-[rgba(10,35,26,0.95)] to-[rgba(10,35,26,0.85)]"
       >
         <div className="px-4 py-3 flex items-center justify-between">
-
           {/* Hamburger + Logo are together on the LEFT */}
           <div className="flex items-center gap-3">
             <button

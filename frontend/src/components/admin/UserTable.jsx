@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import Table from "../common/Table";
 import { getUsers, deleteUser } from "../../api/user.api";
+import { useToast } from "../../context/ToastContext";
+import { useConfirm } from "../../context/ConfirmContext";
 
 const ROLE_OPTIONS = ["all", "admin", "mentor", "student"];
 
@@ -10,6 +12,8 @@ export default function UserTable({ refreshKey }) {
   const [error, setError] = useState("");
   const [role, setRole] = useState("all");
   const [search, setSearch] = useState("");
+  const { showToast } = useToast();
+  const confirm = useConfirm();
 
   const fetchUsers = () => {
     const params = {};
@@ -37,12 +41,16 @@ export default function UserTable({ refreshKey }) {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Delete this user? This cannot be undone.")) return;
+    const confirmed = await confirm("Delete this user? This cannot be undone.", {
+      title: "Delete User",
+      confirmLabel: "Delete",
+    });
+    if (!confirmed) return;
     try {
       await deleteUser(id);
       fetchUsers();
     } catch (err) {
-      alert(err?.response?.data?.message || "Failed to delete user");
+      showToast(err?.response?.data?.message || "Failed to delete user", "error");
     }
   };
 
