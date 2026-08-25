@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import axiosInstance from "../../api/axiosInstance";
 import { getAttendance } from "../../api/attendance.api";
 import AttendanceForm from "../../components/mentor/AttendanceForm";
+import { useToast } from "../../context/ToastContext";
 
 const isSameDay = (a, b) => {
   const d1 = new Date(a);
@@ -27,6 +28,7 @@ export default function MentorAttendancePage() {
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const { showToast } = useToast();
 
   const loadData = async () => {
     setLoading(true);
@@ -79,7 +81,7 @@ export default function MentorAttendancePage() {
       await axiosInstance.put(`/attendance/${recordId}`, { status: newStatus });
       loadData();
     } catch (err) {
-      alert(err?.response?.data?.message || "Failed to update attendance");
+      showToast(err?.response?.data?.message || "Failed to update attendance", "error");
     }
   };
 

@@ -8,6 +8,8 @@ import Loader from "../../components/common/Loader";
 import EmptyState from "../../components/common/EmptyState";
 import { getAnnouncements, deleteAnnouncement } from "../../api/announcement.api";
 import { useAuth } from "../../context/AuthContext";
+import { useToast } from "../../context/ToastContext";
+import { useConfirm } from "../../context/ConfirmContext";
 
 export default function ManageAnnouncements() {
   const { user } = useAuth();
@@ -17,6 +19,8 @@ export default function ManageAnnouncements() {
   const [error, setError] = useState("");
   const [editingAnnouncement, setEditingAnnouncement] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
+  const { showToast } = useToast();
+  const confirm = useConfirm();
 
   const loadAnnouncements = () => {
     setLoading(true);
@@ -50,12 +54,11 @@ export default function ManageAnnouncements() {
   };
 
   const handleDelete = async (announcement) => {
-    if (
-      !window.confirm(
-        `Delete "${announcement.title}"? This cannot be undone.`,
-      )
-    )
-      return;
+    const confirmed = await confirm(
+      `Delete "${announcement.title}"? This cannot be undone.`,
+      { title: "Delete Announcement", confirmLabel: "Delete" },
+    );
+    if (!confirmed) return;
 
     setDeletingId(announcement._id);
     try {
@@ -64,7 +67,10 @@ export default function ManageAnnouncements() {
         current.filter((a) => a._id !== announcement._id),
       );
     } catch (err) {
-      alert(err?.response?.data?.message || "Failed to delete announcement");
+      showToast(
+        err?.response?.data?.message || "Failed to delete announcement",
+        "error",
+      );
     } finally {
       setDeletingId(null);
     }

@@ -5,6 +5,8 @@ import ResourceCard from "../components/resources/ResourceCard";
 import ResourceUploadForm from "../components/resources/ResourceUploadForm";
 import Loader from "../components/common/Loader";
 import EmptyState from "../components/common/EmptyState";
+import { useToast } from "../context/ToastContext";
+import { useConfirm } from "../context/ConfirmContext";
 
 const TYPES = ["Link", "Document", "Video"];
 
@@ -19,6 +21,8 @@ export default function ResourceLibraryPage() {
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const { showToast } = useToast();
+  const confirm = useConfirm();
 
   const fetchResources = async () => {
     setLoading(true);
@@ -40,7 +44,10 @@ export default function ResourceLibraryPage() {
   }, [search, type]);
 
   const handleDelete = async (resource) => {
-    const confirmed = window.confirm(`Delete "${resource.title}"?`);
+    const confirmed = await confirm(`Delete "${resource.title}"?`, {
+      title: "Delete Resource",
+      confirmLabel: "Delete",
+    });
     if (!confirmed) return;
 
     setDeletingId(resource._id);
@@ -48,7 +55,7 @@ export default function ResourceLibraryPage() {
       await deleteResource(resource._id);
       setResources((current) => current.filter((r) => r._id !== resource._id));
     } catch (err) {
-      alert(err?.response?.data?.message || "Failed to delete resource");
+      showToast(err?.response?.data?.message || "Failed to delete resource", "error");
     } finally {
       setDeletingId(null);
     }
