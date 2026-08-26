@@ -7,9 +7,9 @@ const {
 } = require('../controllers/assignment.controller');
 
 router.use(protect);
-router.post('/', authorize('mentor'), createAssignment);
+router.post('/', authorize('admin'), createAssignment);
 router.get('/', authorize('admin', 'mentor', 'student'), getAssignments);
-router.put('/:id', authorize('mentor'), updateAssignment);
-router.delete('/:id', authorize('mentor'), deleteAssignment);
+router.put('/:id', authorize('admin'), updateAssignment);
+router.delete('/:id', authorize('admin'), deleteAssignment);
 
 module.exports = router;

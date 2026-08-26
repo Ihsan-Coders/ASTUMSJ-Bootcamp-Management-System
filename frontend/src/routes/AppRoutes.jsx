@@ -12,6 +12,7 @@ import ManageBatches from "../pages/admin/ManageBatches";
 import ReportsPage from "../pages/admin/ReportsPage";
 
 import ManageAnnouncements from "../pages/admin/ManageAnnouncements";
+import ManageApplications from "../pages/admin/Manageapplications";
 import MentorDashboard from "../pages/mentor/MentorDashboard";
 import ManageAlumni from "../pages/admin/ManageAlumni";
 import MentorAttendancePage from "../pages/mentor/MentorAttendancePage"; // real mentor mark-attendance page
@@ -62,6 +63,14 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={["admin"]}>
             <ManageBatches />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/applications"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <ManageApplications />
           </ProtectedRoute>
         }
       />
