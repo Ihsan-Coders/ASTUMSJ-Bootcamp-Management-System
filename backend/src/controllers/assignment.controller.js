@@ -8,7 +8,7 @@ const asyncHandler = require("../utils/asyncHandler");
 
 // ======================================================
 // CREATE ASSIGNMENT
-// Mentor only
+// Admin only
 // ======================================================
 
 const createAssignment = asyncHandler(async (req, res) => {
@@ -68,9 +68,10 @@ const getAssignments = asyncHandler(async (req, res) => {
 
 // ======================================================
 // UPDATE ASSIGNMENT
-// Mentor only
+// Admin only
 //
-// A mentor can only edit an assignment they created.
+// Admin manages all assignments regardless of which mentor originally
+// created them, so there is no createdBy ownership check here.
 // ======================================================
 
 const updateAssignment = asyncHandler(async (req, res) => {
@@ -81,14 +82,6 @@ const updateAssignment = asyncHandler(async (req, res) => {
       success: false,
       data: null,
       message: "Assignment not found",
-    });
-  }
-
-  if (String(assignment.createdBy) !== String(req.user.id)) {
-    return res.status(403).json({
-      success: false,
-      data: null,
-      message: "You can only edit assignments you created.",
     });
   }
 
@@ -120,9 +113,10 @@ const updateAssignment = asyncHandler(async (req, res) => {
 
 // ======================================================
 // DELETE ASSIGNMENT
-// Mentor only
+// Admin only
 //
-// A mentor can only delete an assignment they created.
+// Admin manages all assignments regardless of which mentor originally
+// created them, so there is no createdBy ownership check here.
 // ======================================================
 
 const deleteAssignment = asyncHandler(async (req, res) => {
@@ -133,14 +127,6 @@ const deleteAssignment = asyncHandler(async (req, res) => {
       success: false,
       data: null,
       message: "Assignment not found",
-    });
-  }
-
-  if (String(assignment.createdBy) !== String(req.user.id)) {
-    return res.status(403).json({
-      success: false,
-      data: null,
-      message: "You can only delete assignments you created.",
     });
   }
 
