@@ -23,12 +23,13 @@ const protect = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET, {
-                    algorithms: ['HS256'],issuer: 'astumsj-bootcamp',
-                    audience: 'astumsj-users',
-                  });
+      algorithms: ["HS256"],
+      issuer: "astumsj-bootcamp",
+      audience: "astumsj-users",
+    });
 
     const user = await User.findById(decoded.sub).select(
-      "_id name email role isActive batch",
+      "_id name email role isActive batch codeforcesHandle",
     );
 
     if (!user) {
@@ -57,7 +58,10 @@ const protect = async (req, res, next) => {
 
     next();
   } catch (error) {
-    if (error.name === "JsonWebTokenError" || error.name === "TokenExpiredError") {
+    if (
+      error.name === "JsonWebTokenError" ||
+      error.name === "TokenExpiredError"
+    ) {
       return res.status(401).json({
         success: false,
         data: null,
