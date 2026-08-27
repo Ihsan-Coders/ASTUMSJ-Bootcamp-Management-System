@@ -13,9 +13,9 @@ const applicationRoutes = require("./application.routes");
 const interviewQuestionRoutes = require("./interviewQuestion.routes");
 const leaderboardRoutes = require("./leaderboard.routes");
 const progressRoutes = require("./progress.routes");
-
+router.use("/contests", require("./contest.routes"));
 router.use("/attendance", require("./attendance.routes"));
-router.use("/progress", require("./progress.routes"));
+router.use("/progress", progressRoutes);
 router.use("/calendar", require("./calendar.routes"));
 router.use("/notifications", require("./notification.routes"));
 router.use("/reports", require("./report.routes"));
@@ -36,8 +36,5 @@ router.use("/submissions", submissionRoutes);
 router.use("/applications", applicationRoutes);
 router.use("/interview-questions", interviewQuestionRoutes);
 router.use("/leaderboard", leaderboardRoutes);
-
-// Progress routes
-router.use("/progress", progressRoutes);
 
 module.exports = router;

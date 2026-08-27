@@ -40,6 +40,10 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    codeforcesHandle: {
+      type: String,
+      trim: true,
+      default: "",
     passwordResetToken: {
       type: String,
       select: false,
