@@ -1,619 +1,543 @@
-# ASTU MSJ Bootcamp Management System
-# FINAL 7-DAY SPRINT — DAY 1 TASK DIVISION
+# ASTU MSJ BOOTCAMP MANAGEMENT SYSTEM
+# FINAL 7-DAY SPRINT — DAY 2 TASK DIVISION
 
-Team: Imran, Seid, Awel
-Time remaining: 1 week before submission
+**Team:** Imran, Seid, Awel  
+**Time remaining:** 6 days after today
 
-## IMPORTANT RULES FOR THIS FINAL WEEK
+## IMPORTANT
 
-1. We are NOT rebuilding the existing system.
-2. We are extending/fixing the current working system.
-3. Follow the existing SRS, current project architecture, existing database models, routes, APIs, and UI.
-4. Do NOT create a completely different architecture.
-5. Do NOT implement features that are assigned to another member unless coordination is required.
-6. If your task depends on another member's work, communicate before changing shared files/models.
-7. Do NOT remove working functionality just to implement a new feature.
-8. Every feature must be tested before considering it complete.
-9. Use feature branches:
-   feature/<short-description>
-10. No direct commits to main.
-11. Open a PR after finishing your assigned work.
-12. If you discover an existing bug outside your task, report it instead of silently changing unrelated code.
+Day 1 foundations are already completed. **Do NOT repeat or rebuild Day 1 work.**
+
+Day 2 must extend the existing working system while following:
+
+- The existing SRS
+- The existing project architecture
+- The existing database/models
+- Existing routes and APIs
+- The existing UI
+- The full bootcamp flow
+- The Day 1 work already completed
+
+Do not create a different architecture or remove working functionality.
 
 ---
 
 # TODAY'S MAIN GOAL
 
-Today we are establishing the foundations for the major missing features.
+### IMRAN
+**Admin Assignment Management + Interview Workflow**
 
-Today's work is divided into:
+### SEID
+**DSA Problem Tracking + CP/DSA Performance Foundation**
 
-- IMRAN → Registration + Admin workflow foundation
-- SEID → CP Contest + Codeforces foundation
-- AWEL → Security + Authentication foundation
-
-The three tasks are related, but each person owns a different part.
+### AWEL
+**Resource Upload Fix + Forgot Password + Security Hardening**
 
 ---
 
 # ============================================================
-# IMRAN — ADMIN / REGISTRATION / INTERVIEW FOUNDATION
+# IMRAN — ADMIN ASSIGNMENTS + INTERVIEW WORKFLOW
 # ============================================================
 
 ## Main objective
 
-Start implementing the new bootcamp admission flow:
+Continue the admission workflow from Day 1 and fix the assignment permission model.
 
-Registration
-→ Admin Review
-→ Interview
-→ Admin Final Decision
-→ Student Authentication
+The assignment business rule is:
 
-Today you are NOT required to finish the entire flow.
+### Admin
 
-Today's goal is to establish the backend/data foundation and admin-side foundation so that the rest can be completed during the next days.
+- Creates assignments
+- Views assignments
+- Updates assignments
+- Deletes assignments
+
+### Mentor
+
+- Views relevant assignments
+- Evaluates student submissions
+- Does NOT create/update/delete assignments
+
+### Student
+
+- Views assignments
+- Submits assignments
+
+Do NOT remove existing mentor grading functionality.
 
 ---
 
-## 1. Understand the registration flow
+## 1. Assignment CRUD authorization
 
-The registration process is NOT the same as creating a normal authenticated Student account.
+Inspect the existing:
 
-A person first applies through the public registration form.
+- Assignment model
+- Assignment controller
+- Assignment routes
+- Role middleware
+- Assignment frontend
 
-The flow is:
+Change the authorization so that assignment document CRUD belongs to Admin.
 
-    Public Registration
-            ↓
+Conceptually:
+
+    ADMIN
+     ├── Create assignment
+     ├── Read assignment
+     ├── Update assignment
+     └── Delete assignment
+
+    MENTOR
+     ├── View assignments
+     └── Evaluate submissions
+
+    STUDENT
+     └── View assignments / submit work
+
+Do not redesign the Assignment model unnecessarily.
+
+---
+
+## 2. Preserve the existing Assignment schema
+
+Keep the existing Assignment structure and business decisions:
+
+- title
+- description
+- instructions
+- batch
+- deadline
+- maxScore
+- createdBy
+- timestamps
+
+`maxScore` is NOT fixed to 100.
+
+An assignment can have a maximum score such as:
+
+    5
+    10
+    20
+    30
+    100
+
+Do not change this rule.
+
+---
+
+## 3. Preserve Submission behavior
+
+Mentors evaluate student submissions.
+
+The Submission contains:
+
+- assignment
+- student
+- githubUrl
+- liveDemoUrl
+- notes
+- attachments
+- score
+- feedback
+- status
+- submittedAt
+- gradedAt
+
+The student is identified from authentication.
+
+The student does NOT manually submit another student's ID.
+
+The score is initially null and is provided by the mentor during grading.
+
+---
+
+# 4. Continue the admission/interview workflow
+
+Day 1 established the registration/application foundation.
+
+Continue the intended flow:
+
+    Registration
+         ↓
     Admin Review
-       ↓         ↓
-    Approved    Rejected
-       ↓           ↓
-    Interview    Rejection Email
-       ↓
-    Mentor Interview
-       ↓
+         ↓
+    Approved
+         ↓
+    Interview
+         ↓
+    Admin assigns mentor
+         ↓
+    Mentor interviews applicant
+         ↓
     Mentor submits:
-    - Interview score
-    - Pass/Fail recommendation
-       ↓
-    Admin makes FINAL decision
-       ↓
-    PASS                FAIL
-      ↓                   ↓
-    Student account     Rejection Email
-    created
-      ↓
-    Temporary password
-    sent by email
-      ↓
-    Student logs in
-      ↓
-    Student changes password
+       - interview score
+       - pass/fail recommendation
+         ↓
+    Admin reviews
+         ↓
+    FINAL PASS / FAIL
 
 IMPORTANT:
 
-- Mentor does NOT make the final admission decision.
-- Mentor only interviews assigned applicants and submits the interview result.
-- Admin makes the final decision.
-- An applicant must NOT automatically become a Student simply because a mentor marked them as passed.
+**Mentor does NOT make the final admission decision.**
+
+The Admin makes the final decision.
 
 ---
 
-# 2. Registration information
+# 5. Mentor assignment
 
-The registration form must support these fields:
-
-### Required
-
-- name
-- email
-- academic year
-- department
-- gender
-- daily time commitment
-- motivation
-
-### Optional
-
-- Codeforces handle
-- LeetCode handle
-- GitHub link
-
-### Daily time commitment
-
-This is REQUIRED.
-
-Minimum:
-
-    5 hours/day
-
-The system must reject a value below 5 hours.
-
-The motivation field is also required.
-
-The applicant is expected to write the motivation themselves; do not build an AI-generated motivation feature.
-
----
-
-# 3. Decide/implement the applicant data structure
-
-Inspect the existing User model first.
-
-Do NOT blindly put all registration fields into User if that would mix applicants with authenticated users.
-
-The important distinction is:
-
-    Applicant ≠ authenticated Student
-
-Use the existing project architecture and SRS to determine whether a separate registration/application model is appropriate.
-
-If a new model is required, follow the existing naming conventions.
-
-The application data must be capable of representing the registration lifecycle.
-
-At minimum, we need to be able to know:
-
-- applicant information
-- registration status
-- whether admin approved/rejected the application
-- interview status
-- assigned mentor
-- interview score
-- mentor's recommendation
-- final admin decision
-
-Do not invent unnecessary fields.
-
----
-
-# 4. Registration status
-
-The application needs a clear lifecycle.
-
-The intended states are conceptually:
-
-    Registered
-    ↓
-    Admin Review
-    ↓
-    Approved → Interview
-    OR
-    Rejected
-
-Then:
-
-    Interview
-    ↓
-    Mentor evaluation
-    ↓
-    Admin final decision
-    ↓
-    Passed / Failed
-
-Use the project's existing conventions for status values.
-
-Do not create multiple overlapping status fields if one well-designed status structure is enough.
-
----
-
-# 5. Admin registration API foundation
-
-Create the backend foundation needed for the Admin to manage applications.
-
-The Admin must eventually be able to:
-
-- View applications
-- View application details
-- Approve application
-- Reject application
-- Move approved applicants to interview
-- Assign a mentor
-
-For TODAY:
-
-Focus on the model + controller/routes foundation.
-
-Do not spend the whole day building a polished UI.
-
----
-
-# 6. Mentor assignment foundation
-
-The Admin is responsible for assigning applicants to mentors.
-
-The intended relationship is:
-
-    Applicant
-       ↓
-    assigned mentor
-       ↓
-    Mentor interviews applicant
-
-Make sure the data structure supports this.
-
-Do NOT create a teacher-management system.
-
-Teachers/lecturers exist in the bootcamp, but teacher management is NOT part of this current task.
-
----
-
-# 7. Today's API endpoints
-
-Follow the existing route structure.
-
-The exact endpoint names should follow the current project conventions.
-
-Conceptually, we need endpoints for:
-
-    GET    applications
-    GET    application/:id
-    PUT/PATCH application/:id/approve
-    PUT/PATCH application/:id/reject
-    PUT/PATCH application/:id/assign-mentor
-
-Do NOT blindly copy these exact routes if the existing project uses another convention.
-
-Inspect the current routes first.
-
----
-
-# 8. Admin authorization
-
-Only Admin should be able to:
-
-- View/manage all applications
-- Approve/reject applications
-- Assign mentors
-- Make final admission decisions
-
-Do not remove authentication/authorization just to make testing easier.
-
-Use the existing auth/RBAC system.
-
----
-
-# 9. What should be completed today
-
-By the end of today you should have:
-
-- Registration/application data structure
-- Required registration fields
-- 5-hour minimum validation
-- Application status structure
-- Admin application controller foundation
-- Admin application routes
-- Mentor assignment foundation
-- RBAC protection for admin actions
-- Basic API testing
-
----
-
-# 10. Testing for Imran
-
-Test at minimum:
-
-### Valid registration
-
-Should succeed.
-
-### Missing required field
-
-Should fail.
-
-### Daily time < 5 hours
-
-Should fail.
-
-### Daily time = 5 hours
-
-Should succeed.
-
-### Optional Codeforces handle missing
-
-Should still succeed.
-
-### Optional GitHub missing
-
-Should still succeed.
-
-### Student attempting admin application management
-
-Should return unauthorized/forbidden.
-
-### Mentor attempting admin application approval
-
-Should return unauthorized/forbidden.
-
----
-
-# 11. Do NOT implement today
-
-Do NOT spend today's time on:
-
-- CP leaderboard
-- Codeforces API
-- Resource thumbnails
-- Reports
-- Attendance redesign
-- Forgot password
-- Security audit
-- Student dashboard
-- Full interview UI
-- Final email flow
-
-Those belong to later work or another member.
-
----
-
-# ============================================================
-# SEID — CP CONTEST + CODEFORCES FOUNDATION
-# ============================================================
-
-## Main objective
-
-Build the foundation for the bootcamp's weekly Competitive Programming system.
-
-You are the owner of this area because you have strong CP experience.
-
-The system needs to support TWO different concepts:
-
-1. Weekly CP Contest Leaderboard
-2. Overall Bootcamp Leaderboard
-
-DO NOT treat them as the same leaderboard.
-
----
-
-# 1. Understand the CP flow
-
-Every week:
-
-    Admin teaches/organizes the bootcamp activity
-             ↓
-    Admin creates a bootcamp CP contest
-             ↓
-    Admin chooses problems
-             ↓
-    Admin sets contest details/time
-             ↓
-    Students participate
-             ↓
-    Codeforces records results
-             ↓
-    Our system fetches the results
-             ↓
-    Our own website displays the leaderboard
-
-The contest is for the bootcamp students.
-
-It is not a generic Codeforces contest browser.
-
----
-
-# 2. Codeforces handles
-
-Students provide their Codeforces handle during registration.
-
-That handle will later be used to associate the Codeforces participant with the corresponding Student account.
-
-Example:
-
-    Student:
-    Imran
-
-    Codeforces handle:
-    imran123
-
-Our system must be able to identify that Codeforces participant as Imran.
-
-Do NOT rely on students manually entering their contest score.
-
----
-
-# 3. Contest data foundation
-
-Inspect the current project before creating anything.
-
-Create the necessary backend structure for bootcamp contests.
-
-The system needs to represent information such as:
-
-- Contest name
-- Codeforces contest ID
-- Contest URL
-- Contest date/time
-- Duration
-- Problems
-- Admin who created the contest
-- Contest status
-
-Use the existing project conventions.
-
-Do not add unnecessary fields.
-
----
-
-# 4. Admin contest creation foundation
-
-The Admin must eventually be able to create a weekly contest.
-
-The concept is:
+Implement the necessary backend functionality so:
 
     Admin
       ↓
-    Create Contest
+    Select applicant
       ↓
-    Enter/select Codeforces contest information
+    Assign mentor
       ↓
-    Save contest
-      ↓
-    Students can view contest
+    Mentor sees assigned applicant
 
-Today focus on the backend/model/API foundation.
+A mentor should only access applicants assigned to that mentor.
 
-The polished UI can come later.
+Do NOT create a teacher-management system.
+
+Teachers/lecturers exist in the bootcamp, but teacher management is outside this task.
 
 ---
 
-# 5. Codeforces integration research + foundation
+# 6. Mentor interview result
 
-Investigate the Codeforces API/endpoints that are actually appropriate for retrieving contest results.
+Implement the functionality required for the mentor to submit:
 
-We need to eventually retrieve information such as:
+- Overall interview score
+- Pass/fail recommendation
 
-- Participant handle
-- Rank
-- Points/score
-- Problems solved
-- Contest result
+The mentor's result must NOT automatically authenticate the student.
 
-Do not scrape HTML if the official API provides the required information.
+Instead:
 
-Do not hardcode leaderboard results.
-
-Do not manually store screenshots.
-
-The whole purpose of this feature is to replace the current process:
-
-    Admin takes screenshot of Codeforces leaderboard
+    Mentor recommendation
             ↓
-    Sends screenshot to Telegram
-
-with:
-
-    Codeforces results
+    Admin review
             ↓
-    Our backend
-            ↓
-    Our leaderboard page
+    Admin final decision
 
 ---
 
-# 6. Handle edge cases
+# 7. Admin final decision foundation
 
-Today, investigate how the system should behave when:
+The eventual behavior is:
 
-- Contest has not started
-- Contest is still running
-- Contest has finished
-- Codeforces API is unavailable
-- Student has no Codeforces handle
-- Handle is invalid
-- Student did not participate
-- Codeforces returns no results
+### PASS
 
-Do not allow an external API failure to crash the entire application.
+- Admin marks applicant as passed
+- Student account is created/authenticated
+- Temporary password is generated
+- Successful admission email is sent
 
----
+### FAIL
 
-# 7. CP leaderboard foundation
+- Admin marks applicant as failed
+- Rejection email is sent
 
-Do NOT build the complete final leaderboard today.
+If the existing email infrastructure is already available, integrate with it.
 
-Create the foundation required for:
-
-    Contest
-       ↓
-    Codeforces contest ID
-       ↓
-    Codeforces results
-       ↓
-    CP leaderboard
-
-The final UI and overall scoring integration will come later.
+If email infrastructure is not ready, implement the state transition cleanly and document the email dependency instead of creating a fake email system.
 
 ---
 
-# 8. DSA problem tracking awareness
+# 8. Testing
 
-The bootcamp also requires students to solve DSA problems every week.
+Test:
 
-The expected activity is approximately:
-
-- At least 10 problems/week
-- Problems can come from Codeforces/LeetCode
-- Students submit the problem links
-- Students record the time taken
-- Students push their solutions to a repository
-
-This is separate from the weekly CP contest.
-
-Do not accidentally merge:
-
-    DSA problem submission
-
-with:
-
-    CP contest participation
-
-They are related to the overall performance system but are separate activities.
-
----
-
-# 9. Today's testing
-
-Test the contest foundation with sample data.
-
-Verify:
-
-- Admin can create a contest
-- Unauthorized users cannot create contests
-- Contest information is saved correctly
-- Codeforces contest ID is stored correctly
-- Student Codeforces handle can be associated later
-- Invalid contest data is rejected
-- API failure is handled safely
-
----
-
-# 10. Do NOT implement today
-
-Do NOT spend today's time on:
-
-- Final overall leaderboard formula
-- Attendance calculation
-- Reports
-- Registration workflow
-- Password system
-- Resource uploads
-- Admin creation
-- Mentor interview system
-
-Those are handled separately.
+- Admin creates assignment → SUCCESS
+- Mentor attempts assignment creation → FORBIDDEN
+- Mentor evaluates submission → SUCCESS
+- Student cannot modify assignment → FORBIDDEN
+- Admin assigns applicant to mentor → SUCCESS
+- Different mentor cannot access another mentor's applicant → FORBIDDEN
+- Mentor submits interview result → SUCCESS
+- Mentor cannot make final admission decision → FORBIDDEN
+- Admin can make final admission decision → SUCCESS
 
 ---
 
 # ============================================================
-# AWEL — SECURITY + AUTHENTICATION FOUNDATION
+# SEID — DSA PROBLEM TRACKING + PERFORMANCE FOUNDATION
 # ============================================================
 
 ## Main objective
 
-Audit and harden the existing security/authentication system before we add more sensitive workflows.
+Continue the Day 1 CP foundation and implement the foundation for the weekly DSA activity system.
 
-You are the owner of security-related work.
+Do NOT rebuild the Codeforces contest foundation.
 
-Do NOT rewrite authentication unless the current implementation actually requires it.
+The bootcamp has TWO related but separate systems:
+
+### System 1 — Weekly CP Contest Leaderboard
+
+Based on Codeforces contest results.
+
+### System 2 — Overall Bootcamp Leaderboard
+
+Eventually combines performance such as:
+
+- Attendance
+- DSA problems
+- CP contests
+- Web-development assignment grades
+
+Do NOT treat these as the same leaderboard.
 
 ---
 
-# 1. Strong password policy
+# 1. Weekly DSA workflow
 
-Implement the required password policy.
+Every week students:
 
-Password must contain:
+    Learn DSA topic
+         ↓
+    Receive problem links
+         ↓
+    Solve problems
+         ↓
+    Push solutions to repository
+         ↓
+    Submit problem information
+         ↓
+    Record time taken
 
-- Minimum 8 characters
-- At least 1 uppercase letter
-- At least 1 lowercase letter
-- At least 1 number
-- At least 1 special character
+The expected target is approximately:
 
-This should be validated whenever a user creates or changes a password.
+**10 problems + 1 contest per week.**
 
-This applies to:
+---
+
+# 2. DSA problem submission foundation
+
+Build the backend structure needed for students to submit individual problem records.
+
+A problem submission should be associated with:
+
+- Student
+- Problem link
+- Platform
+- Time taken
+- Solution repository/link
+- Submission date
+
+Student identity must come from authentication.
+
+Do NOT allow students to submit records for another student.
+
+---
+
+# 3. Supported platforms
+
+At minimum support:
+
+- Codeforces
+- LeetCode
+
+Do not hardcode the system to only Codeforces.
+
+---
+
+# 4. Weekly tracking
+
+The system must eventually be able to determine activity for a particular week.
+
+Example:
+
+    Week 1
+
+    Student A → 10 problems
+    Student B → 7 problems
+    Student C → 3 problems
+
+This information will later contribute to:
+
+- Performance
+- At-risk identification
+- Overall leaderboard
+
+Do NOT implement the final at-risk decision today.
+
+---
+
+# 5. Time tracking
+
+Students submit the time they took to solve each problem.
+
+Validate that:
+
+- Invalid values are rejected
+- Negative values are rejected
+- Obviously invalid values are rejected
+
+Do NOT attempt to automatically calculate solving time from Codeforces/LeetCode unless the API actually supports that requirement.
+
+The student records the time.
+
+---
+
+# 6. Solution repository
+
+Students are expected to create a repository and push their solutions.
+
+Support the solution repository URL.
+
+Do not impose a repository naming convention unless the existing SRS specifies one.
+
+---
+
+# 7. Codeforces handle
+
+Registration includes the student's Codeforces handle.
+
+The CP system must eventually use that existing handle to associate Codeforces contest results with the correct student.
+
+The relationship should be:
+
+    Student
+      ├── Codeforces handle
+      ├── LeetCode handle
+      ├── DSA problem submissions
+      └── Contest results
+
+Do NOT create duplicate student identity fields.
+
+---
+
+# 8. Preserve Day 1 contest foundation
+
+Use the contest foundation created on Day 1.
+
+Verify that contest information can eventually be associated with the correct students through their Codeforces handles.
+
+Do NOT rebuild the contest creation system.
+
+---
+
+# 9. Do NOT finalize the overall leaderboard formula
+
+The eventual overall leaderboard will use the bootcamp's performance data.
+
+Relevant dimensions include:
+
+    Attendance
+    DSA problems
+    CP contests
+    Web-development assignment grades
+
+However, the exact weights/formula have not been finalized here.
+
+**Do NOT invent percentages or weights.**
+
+Today's goal is to make sure the required data exists and can be calculated later.
+
+---
+
+# 10. Testing
+
+Test:
+
+- Student submits a DSA problem → SUCCESS
+- Student identity comes from JWT → SUCCESS
+- Invalid problem data → REJECTED
+- Negative solving time → REJECTED
+- Student cannot submit for another student → FORBIDDEN
+- Admin can view student activity → SUCCESS
+- Mentor can view relevant student activity where permitted → SUCCESS
+- Codeforces handle remains associated with the correct student → SUCCESS
+
+---
+
+# ============================================================
+# AWEL — RESOURCE UPLOAD + FORGOT PASSWORD + SECURITY
+# ============================================================
+
+## Main objective
+
+Fix the currently broken Resource upload system and implement the missing Forgot Password functionality while continuing security hardening.
+
+Do NOT repeat Day 1 password implementation unless integration problems are discovered.
+
+---
+
+# 1. Fix Resource uploads
+
+The report specifically identifies:
+
+**Resource uploads are broken.**
+
+Inspect:
+
+- Resource model
+- Resource controller
+- Resource routes
+- Upload middleware
+- Cloudinary configuration
+- Resource frontend form
+- Axios/API request
+
+Find the actual cause of the failure.
+
+Do NOT replace the entire upload architecture without first understanding the current implementation.
+
+---
+
+# 2. Resource upload security
+
+Verify:
+
+- Authentication
+- Authorization
+- File size limits
+- MIME validation
+- Extension validation
+- Storage configuration
+- Cloudinary response
+- Database URL
+- Filename handling
+- Error handling
+
+Do not trust only the extension supplied by the browser.
+
+---
+
+# 3. Resource fields
+
+The Resource system will eventually support:
+
+- Thumbnail
+- Resource link
+- Downloadable file
+- Resource details
+
+Do not build the complete visual redesign today unless it is necessary to fix the upload flow.
+
+---
+
+# 4. Forgot Password
+
+Implement the backend foundation for:
+
+    Forgot password
+          ↓
+    User enters email
+          ↓
+    Secure reset token generated
+          ↓
+    Reset link sent by email
+          ↓
+    User opens reset link
+          ↓
+    New strong password
+          ↓
+    Password updated
+
+It must support:
 
 - Student
 - Mentor
@@ -621,181 +545,164 @@ This applies to:
 
 ---
 
-# 2. Inspect current authentication
+# 5. Reset-token security
 
-Review the existing:
+The reset token must:
 
-- Auth controller
-- User model
-- Password hashing
-- JWT generation
-- Auth middleware
-- Role middleware
-- Protected routes
+- Expire
+- Be single-use
+- Not expose passwords
+- Not expose sensitive user information
 
-Do not remove protect/authorize middleware simply because Postman testing is inconvenient.
+After successful password reset, the token must no longer work.
 
-Use valid authentication tokens during testing.
+Prefer storing a hashed reset token rather than the raw token where compatible with the existing architecture.
 
 ---
 
-# 3. RBAC audit
+# 6. Password policy
 
-Verify that roles are properly enforced.
+The existing Day 1 password policy remains:
 
-At minimum:
+- Minimum 8 characters
+- At least 1 uppercase letter
+- At least 1 lowercase letter
+- At least 1 number
+- At least 1 special character
 
-    Admin
-    Mentor
-    Student
-
-Test that each role can only perform the actions it is supposed to perform.
-
-Pay particular attention to the new workflows because they contain sensitive actions.
+The same policy must apply to password resets.
 
 ---
 
-# 4. Prevent privilege escalation
+# 7. Prevent account enumeration
 
-The client must NOT be able to simply send:
+The forgot-password response should not unnecessarily reveal whether an email belongs to an existing account.
 
-    role: "admin"
-
-and turn themselves into an admin.
-
-Check user creation/update endpoints for mass-assignment problems.
-
-Role changes must be controlled by the appropriate authorized operation.
+Use a safe generic response where appropriate.
 
 ---
 
-# 5. Registration security
+# 8. Security review of admission workflow
 
 Coordinate with Imran.
 
-The registration system will accept public user input.
+### Public applicant
 
-Review it for:
+Can:
 
-- Required-field validation
-- Invalid input
-- Duplicate email
-- Malicious values
-- Unauthorized status changes
-- Unauthorized mentor assignment
-- Unauthorized approval/rejection
+- Submit registration
 
-The public registration endpoint must NOT allow someone to create an authenticated Admin/Mentor/Student account directly.
+Cannot:
 
----
+- Approve themselves
+- Assign themselves a mentor
+- Change their application status
+- Make themselves a Student
+- Create an Admin account
 
-# 6. File upload security foundation
+### Mentor
 
-Review the current upload implementation because resource uploads are currently broken.
+Can:
 
-Check:
+- See assigned applicants
+- Submit interview result
 
-- Allowed file types
-- File size limits
-- MIME validation
-- Extension validation
-- Storage configuration
-- Unauthorized uploads
-- File naming
-- Path traversal concerns
-- Authentication/authorization
+Cannot:
 
-Do not trust the filename extension alone.
+- Make final admission decisions
+- Assign applicants
+- Create Admin accounts
 
-Coordinate with Imran because he will work on the Resource UI.
+### Admin
 
----
+Can:
 
-# 7. Error handling
-
-Review the current API error behavior.
-
-Make sure sensitive information is not leaked through errors.
-
-For example, don't expose:
-
-- Password hashes
-- Secrets
-- JWT secrets
-- Internal stack traces in production
-- Database connection details
+- Review applicants
+- Approve/reject applications
+- Assign mentors
+- Make final admission decisions
+- Create another Admin
 
 ---
 
-# 8. Today's security tests
+# 9. Testing
+
+## Forgot password
 
 Test:
 
-### Authentication
-
-- No token
-- Invalid token
+- Valid email
+- Unknown email
 - Expired token
-- Valid token
+- Reused token
+- Invalid token
+- Weak new password
+- Strong new password
 
-### Authorization
-
-- Student → Admin endpoint ❌
-- Mentor → Admin endpoint ❌
-- Student → Mentor endpoint ❌
-- Admin → Admin endpoint ✅
-
-### Password
+## Resource upload
 
 Test:
 
-    abc123
-    → reject
-
-    Password1
-    → reject if no special character
-
-    password!
-    → reject if no uppercase/number
-
-    Password1!
-    → accept
-
-### Privilege escalation
-
-Attempt to create/update a user with:
-
-    role: "admin"
-
-from an unauthorized account.
-
-It must fail.
-
----
-
-# 9. Do NOT implement today
-
-Do NOT spend today's time on:
-
-- CP leaderboard
-- Registration UI
-- Reports
-- Attendance
-- Resource UI
-- Recent activities
-- Mentor dashboard
-- Landing page
-- Contest scoring
-
-Those belong to other tasks/days.
+- Valid file
+- Invalid extension
+- Invalid MIME type
+- Oversized file
+- Unauthorized upload
+- Successful Cloudinary upload
+- Database record creation
 
 ---
 
 # ============================================================
-# SHARED RULES BETWEEN ALL THREE
+# SHARED INTEGRATION REQUIREMENTS
 # ============================================================
 
-## 1. Before coding
+Because Day 2 features depend on Day 1 work, do not modify shared models or APIs without coordination.
+
+## Imran ↔ Seid
+
+Registration already includes:
+
+- Codeforces handle
+- LeetCode handle
+
+Seid must use these existing student fields.
+
+Do NOT create duplicate identity fields.
+
+---
+
+## Imran ↔ Awel
+
+The admission flow is:
+
+    Applicant
+       ↓
+    Admin
+       ↓
+    Mentor
+       ↓
+    Admin
+       ↓
+    Student
+
+Awel must ensure authorization prevents users from bypassing this flow.
+
+---
+
+## Seid ↔ Imran
+
+DSA activity and contest results will eventually contribute to overall student performance.
+
+Do NOT create duplicate Student records.
+
+---
+
+# ============================================================
+# SHARED RULES
+# ============================================================
+
+## Before coding
 
 Each person must:
 
@@ -807,7 +714,7 @@ Each person must:
 
 ---
 
-# 2. Shared files
+## Shared files
 
 Be careful with:
 
@@ -820,11 +727,11 @@ Be careful with:
 - shared API utilities
 - shared CSS/components
 
-If you need to modify a shared file, communicate first.
+If a shared file must be changed, communicate first.
 
 ---
 
-# 3. No destructive changes
+## No destructive changes
 
 Do NOT:
 
@@ -836,16 +743,16 @@ Do NOT:
 
 ---
 
-# 4. Testing requirement
+## Testing requirement
 
-Every completed backend feature must be tested through:
+Every backend feature must be tested through:
 
 - Postman
-- Existing tests where available
+- Existing automated tests where available
 
 Every frontend feature must be tested in the browser.
 
-At minimum verify:
+At minimum test:
 
 - Happy path
 - Invalid input
@@ -855,94 +762,88 @@ At minimum verify:
 
 ---
 
-# 5. End-of-day report
-
-Before finishing today, each person sends:
-
-### Completed
-- What was implemented
-
-### Files changed
-- Exact files modified/created
-
-### Testing
-- What was tested
-- Result
-
-### Problems
-- Any blocker
-- Any dependency on another member
-
-### Commit
-- Branch name
-- Commit message
-- PR status
-
-Example:
-
-    Branch:
-    feature/registration-foundation
-
-    Commit:
-    feat: add registration application foundation
-
----
-
 # ============================================================
-# DAY 1 DEFINITION OF DONE
+# DAY 2 DEFINITION OF DONE
 # ============================================================
 
 ## IMRAN
 
-[ ] Registration/application foundation exists
-[ ] All registration fields are supported
-[ ] Daily commitment minimum 5 hours enforced
-[ ] Applicant status lifecycle foundation exists
-[ ] Admin application API foundation exists
-[ ] Admin can approve/reject through protected API
-[ ] Admin can assign mentor through protected API
-[ ] Unauthorized roles are rejected
-[ ] Basic Postman testing completed
+- [ ] Assignment CRUD restricted to Admin
+- [ ] Mentor retains grading/evaluation ability
+- [ ] Student retains assignment viewing/submission ability
+- [ ] Admin can assign applicants to mentors
+- [ ] Mentor can access assigned applicants
+- [ ] Mentor can submit interview score/recommendation
+- [ ] Admin final decision foundation implemented
+- [ ] Existing Day 1 registration functionality preserved
+- [ ] APIs tested
 
 ---
 
 ## SEID
 
-[ ] CP contest foundation exists
-[ ] Codeforces contest ID can be stored
-[ ] Contest information can be created by Admin
-[ ] Codeforces API approach identified/implemented at foundation level
-[ ] Student Codeforces handle can be associated
-[ ] CP result data structure is understood
-[ ] API failure/invalid data cases considered
-[ ] Basic testing completed
+- [ ] DSA problem tracking foundation implemented
+- [ ] Student identity comes from authentication
+- [ ] Codeforces supported
+- [ ] LeetCode supported
+- [ ] Problem URL stored
+- [ ] Solution repository stored
+- [ ] Time taken stored
+- [ ] Weekly activity can be identified
+- [ ] Codeforces handle connected to student
+- [ ] Day 1 contest foundation preserved
+- [ ] APIs tested
 
 ---
 
 ## AWEL
 
-[ ] Strong password policy implemented
-[ ] Existing authentication audited
-[ ] RBAC audited
-[ ] Privilege escalation checked
-[ ] Registration security reviewed
-[ ] Upload security reviewed
-[ ] Sensitive error exposure checked
-[ ] Authentication/RBAC tests completed
+- [ ] Resource upload issue investigated
+- [ ] Resource upload fixed
+- [ ] Upload security verified
+- [ ] Cloudinary/storage integration verified
+- [ ] Forgot-password endpoint implemented
+- [ ] Reset-token security implemented
+- [ ] Password reset uses strong-password rules
+- [ ] Token expiry/single-use behavior tested
+- [ ] Admission-flow RBAC reviewed
+- [ ] Upload + password recovery tested
+
+---
+
+# ============================================================
+# END-OF-DAY REPORT
+# ============================================================
+
+Before finishing Day 2, each person must provide:
+
+    Completed:
+    Files changed:
+    Tests performed:
+    Problems/blockers:
+    Dependencies on teammates:
+    Branch:
+    Commit:
+    PR:
 
 ---
 
 # MOST IMPORTANT
 
-Today's objective is NOT to finish the entire new system.
+**Do NOT repeat Day 1.**
 
-Today's objective is to create solid foundations so that Days 2–6 can be implemented quickly without having to rewrite today's work.
+Day 1 established the foundations.
 
-If you encounter a requirement that is unclear:
+Day 2 turns those foundations into working functionality.
+
+If a requirement is unclear:
 
 1. Stop.
 2. Tell the team.
-3. Check the existing SRS/current implementation.
-4. Do not invent a new business rule.
+3. Check the existing SRS and implementation.
+4. Coordinate with the relevant teammate.
+5. Do not invent a new business rule.
 
-We have only one week left, so correctness and integration are more important than unnecessary refactoring.
+We have limited time remaining.
+
+**Working, integrated, tested features are more important than unnecessary refactoring.**

@@ -39,10 +39,8 @@ const getMe = asyncHandler(async (req, res) => {
   });
 });
 
-// PUT /api/users/me
-// Self-service profile update.
-// Only name and email can be changed here.
-const selfEditableFields = ["name", "email"];
+
+const selfEditableFields = ['name', 'email'];
 
 const updateMe = asyncHandler(async (req, res) => {
   const updates = {};
