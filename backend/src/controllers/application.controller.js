@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Application = require('../models/Application');
 const User = require('../models/User');
+const InterviewQuestion = require('../models/InterviewQuestion');
 const asyncHandler = require('../utils/asyncHandler');
 
 // Statuses that count as "an application already in progress" for the
@@ -167,8 +168,18 @@ const getMyAssignedApplicants = asyncHandler(async (req, res) => {
 // Only the mentor this applicant is assigned to may submit a result, and
 // only while the application is in "Interview". This transitions the
 // application to "Interview Completed" — it does NOT decide Pass/Fail.
+// PUT /api/applications/:id/interview-result — mentor only.
+// Mentor identity comes from req.user.id, never from the request body.
+// Only the mentor this applicant is assigned to may submit a result, and
+// only while the application is in "Interview". This transitions the
+// application to "Interview Completed" — it does NOT decide Pass/Fail.
+//
+// The mentor must score every question currently in the global
+// InterviewQuestion list (no partial/extra submissions) plus one overall
+// note. Each question's text/maxScore is snapshotted onto the answer so
+// later edits/deletions to InterviewQuestion never alter this record.
 const submitInterviewResult = asyncHandler(async (req, res) => {
-  const { score, recommendation } = req.body;
+  const { answers, note } = req.body;
 
   const application = await Application.findById(req.params.id);
 
@@ -192,8 +203,61 @@ const submitInterviewResult = asyncHandler(async (req, res) => {
     });
   }
 
-  application.interviewScore = score;
-  application.mentorRecommendation = recommendation;
+  const currentQuestions = await InterviewQuestion.find();
+
+  if (currentQuestions.length === 0) {
+    return res.status(400).json({
+      success: false,
+      data: null,
+      message: 'No interview questions have been configured yet',
+    });
+  }
+
+  const questionById = new Map(currentQuestions.map((q) => [String(q._id), q]));
+  const submittedIds = answers.map((a) => a.questionId);
+
+  const hasUnknownQuestion = submittedIds.some((id) => !questionById.has(id));
+  if (hasUnknownQuestion) {
+    return res.status(400).json({
+      success: false,
+      data: null,
+      message: 'One or more questions are invalid or no longer exist',
+    });
+  }
+
+  const missingQuestion = currentQuestions.some(
+    (q) => !submittedIds.includes(String(q._id)),
+  );
+  if (missingQuestion || submittedIds.length !== currentQuestions.length) {
+    return res.status(400).json({
+      success: false,
+      data: null,
+      message: 'A score is required for every current interview question',
+    });
+  }
+
+  const invalidScore = answers.some((a) => {
+    const question = questionById.get(a.questionId);
+    return a.score > question.maxScore;
+  });
+  if (invalidScore) {
+    return res.status(400).json({
+      success: false,
+      data: null,
+      message: 'A score cannot exceed its question\'s max score',
+    });
+  }
+
+  application.interviewAnswers = answers.map((a) => {
+    const question = questionById.get(a.questionId);
+    return {
+      question: question._id,
+      questionText: question.text,
+      maxScore: question.maxScore,
+      score: a.score,
+    };
+  });
+  application.interviewNote = note;
   application.status = 'Interview Completed';
   await application.save();
 
@@ -205,7 +269,7 @@ const submitInterviewResult = asyncHandler(async (req, res) => {
 });
 
 // PUT /api/applications/:id/final-decision — admin only.
-// Only valid from "Interview Completed". The mentor's recommendation is
+// Only valid from "Interview Completed". The mentor's scored answers/note
 // informational only — it does not automatically decide the outcome, and
 // this endpoint is the only place status can become Passed/Failed.
 //

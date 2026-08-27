@@ -13,6 +13,7 @@ export const assignApplicationMentor = (id, mentorId) =>
 
 // Mentor
 export const getMyAssignedApplicants = () => axiosInstance.get('/applications/assigned/mine');
+// data: { answers: [{ questionId, score }], note }
 export const submitInterviewResult = (id, data) =>
   axiosInstance.put(`/applications/${id}/interview-result`, data);
 

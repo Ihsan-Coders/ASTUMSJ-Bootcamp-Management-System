@@ -35,14 +35,24 @@ const assignMentorSchema = Joi.object({
     .messages({ 'string.pattern.base': 'Invalid mentor id' }),
 });
 
-// PUT /api/applications/:id/interview-result — mentor submits score + recommendation.
-// The SRS does not define a scoring scale for interviews (Submission scoring
-// is out of assignment.maxScore, which doesn't apply here). A plain 0-100
-// range is used as the simplest reasonable default — flagged in the report
-// below in case the team wants a different scale.
+// PUT /api/applications/:id/interview-result — mentor submits a score per
+// question (validated against the current question list in the
+// controller, since each question's actual maxScore is only known there)
+// plus one overall note explaining the scores.
 const interviewResultSchema = Joi.object({
-  score: Joi.number().min(0).max(100).required(),
-  recommendation: Joi.string().valid('pass', 'fail').required(),
+  answers: Joi.array()
+    .items(
+      Joi.object({
+        questionId: Joi.string()
+          .pattern(/^[0-9a-fA-F]{24}$/)
+          .required()
+          .messages({ 'string.pattern.base': 'Invalid question id' }),
+        score: Joi.number().min(0).required(),
+      }),
+    )
+    .min(1)
+    .required(),
+  note: Joi.string().trim().required(),
 });
 
 // PUT /api/applications/:id/final-decision — admin makes the final call.
