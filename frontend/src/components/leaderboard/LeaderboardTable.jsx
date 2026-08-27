@@ -1,73 +1,91 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Trophy, Medal, Award } from "lucide-react";
+import { Crown } from "lucide-react";
 
-const RANK_STYLES = [
-  {
-    icon: Trophy,
-    color: "text-gold",
-    glow: "shadow-[0_0_15px_rgba(212,175,55,0.3)]",
-  },
-  { icon: Medal, color: "text-emerald", glow: "" },
-  { icon: Award, color: "text-text-secondary", glow: "" },
-];
+import LeaderboardTable from "../components/leaderboard/LeaderboardTable";
+import { getLeaderboard } from "../api/leaderboard.api";
+import { useAuth } from "../context/AuthContext";
 
-export default function LeaderboardTable({ leaderboard = [] }) {
-  if (leaderboard.length === 0) {
+export default function LeaderboardPage() {
+  const { user } = useAuth();
+
+  const [leaderboard, setLeaderboard] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const loadLeaderboard = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const batchId =
+          user?.batch?._id ||
+          user?.batch?.id ||
+          user?.batchId ||
+          user?.batch ||
+          null;
+
+        const response = await getLeaderboard(batchId);
+
+        console.log("LEADERBOARD DATA:", response.data.data);
+
+        setLeaderboard(response.data.data || []);
+      } catch (err) {
+        console.error("Failed to load leaderboard:", err);
+
+        setError(
+          err?.response?.data?.message ||
+            "Failed to load leaderboard. Please try again.",
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user) {
+      loadLeaderboard();
+    }
+  }, [user]);
+
+  if (loading) {
     return (
-      <div className="glass-card glow-border rounded-xl p-8 text-center text-text-secondary">
-        No leaderboard data yet — start submitting and grading assignments!
+      <div className="pt-24 sm:pt-28 px-4 sm:px-6 pb-24 md:pb-12 max-w-6xl mx-auto">
+        <p className="text-center text-text-secondary">
+          Loading leaderboard...
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="glass-card glow-border rounded-xl overflow-hidden">
-      {leaderboard.map((entry, i) => {
-        const rankStyle = RANK_STYLES[i];
-        const RankIcon = rankStyle?.icon;
+    <div className="pt-24 sm:pt-28 px-4 sm:px-6 pb-24 md:pb-12 max-w-6xl mx-auto">
+      <div className="mb-8">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center gap-3 mb-2"
+        >
+          <Crown className="w-7 h-7 text-gold" />
 
-        return (
-          <motion.div
-            key={entry.student.id}
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: i * 0.05 }}
-            className={`flex items-center justify-between p-4 border-b border-border/50 last:border-0 ${rankStyle?.glow || ""}`}
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-8 flex justify-center">
-                {RankIcon ? (
-                  <RankIcon className={`w-5 h-5 ${rankStyle.color}`} />
-                ) : (
-                  <span className="text-text-secondary text-sm font-semibold">
-                    #{i + 1}
-                  </span>
-                )}
-              </div>
-              <span className="text-text-primary font-medium">
-                {entry.student.name}
-              </span>
-            </div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-text-primary font-[var(--font-display)]">
+            Bootcamp Leaderboard
+          </h1>
+        </motion.div>
 
-            <div className="flex items-center gap-6 text-sm">
-              <div className="text-right hidden sm:block">
-                <div className="text-text-secondary text-xs">Avg Score</div>
-                <div className="text-text-primary">{entry.avgScore}%</div>
-              </div>
-              <div className="text-right hidden sm:block">
-                <div className="text-text-secondary text-xs">Attendance</div>
-                <div className="text-text-primary">{entry.attendancePct}%</div>
-              </div>
-              <div className="text-right w-16">
-                <div className="text-text-secondary text-xs">Score</div>
-                <div className="text-gold font-bold text-lg">
-                  {entry.combinedScore}
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        );
-      })}
+        <p className="text-text-secondary text-sm sm:text-base">
+          Track bootcamp performance across assignments, attendance, DSA
+          activity, and competitive programming.
+        </p>
+      </div>
+
+      {error && (
+        <div className="glass-card glow-border rounded-xl p-4 mb-6">
+          <p className="text-danger text-sm">{error}</p>
+        </div>
+      )}
+
+      {!error && <LeaderboardTable leaderboard={leaderboard} />}
     </div>
   );
 }
