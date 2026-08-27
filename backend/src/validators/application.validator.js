@@ -14,6 +14,8 @@ const createApplicationSchema = Joi.object({
   // accepted as free text rather than an invented enum.
   gender: Joi.string().trim().required(),
 
+  phoneNumber: Joi.string().trim().required(),
+
   dailyCommitmentHours: Joi.number().min(5).required().messages({
     'number.min': 'Daily time commitment must be at least 5 hours',
   }),

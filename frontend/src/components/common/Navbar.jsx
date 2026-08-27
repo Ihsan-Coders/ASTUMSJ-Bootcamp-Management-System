@@ -56,6 +56,11 @@ const ROLE_LINKS = {
       icon: ClipboardList,
     },
     {
+      label: "Assignments",
+      path: "/admin/assignments",
+      icon: ClipboardCheck,
+    },
+    {
       label: "Alumni",
       path: "/admin/alumni",
       icon: GraduationCap,
@@ -107,6 +112,11 @@ const ROLE_LINKS = {
       label: "Assignments",
       path: "/mentor/assignments",
       icon: ClipboardList,
+    },
+    {
+      label: "Applicants",
+      path: "/mentor/applicants",
+      icon: Users,
     },
     {
       label: "Resources",
