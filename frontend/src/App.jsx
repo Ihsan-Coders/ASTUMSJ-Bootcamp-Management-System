@@ -14,7 +14,7 @@ function App() {
       <Navbar />
 
       <main
-        className={`relative z-10 flex-1 ${
+        className={`relative z-10 flex-1 pt-20 ${
           user ? "md:pl-[260px]" : ""
         }`}
       >

@@ -42,6 +42,11 @@ const applicationSchema = new mongoose.Schema(
       required: [true, 'Gender is required'],
       trim: true,
     },
+    phoneNumber: {
+  type: String,
+  required: [true, 'Phone number is required'],
+  trim: true,
+},
 
     dailyCommitmentHours: {
       type: Number,

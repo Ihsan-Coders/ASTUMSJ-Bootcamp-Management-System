@@ -2,8 +2,6 @@ import { Routes, Route } from "react-router-dom";
 //import LandingPage from "../pages/LandingPage";
 import LoginPage from "../pages/LoginPage";
 import RegisterPage from "../pages/RegisterPage";
-import ForgotPasswordPage from "../pages/ForgotPasswordPage";
-import ResetPasswordPage from "../pages/ResetPasswordPage";
 import NotFoundPage from "../pages/NotFoundPage";
 import MentorProgressPage from "../pages/mentor/ProgressPage";
 import ProtectedRoute from "../components/auth/ProtectedRoute";
@@ -14,12 +12,14 @@ import ManageBatches from "../pages/admin/ManageBatches";
 import ReportsPage from "../pages/admin/ReportsPage";
 
 import ManageAnnouncements from "../pages/admin/ManageAnnouncements";
-import ManageApplications from "../pages/admin/Manageapplications";
+import ManageApplications from "../pages/admin/ManageApplications";
+import ManageAssignments from "../pages/admin/ManageAssignments";
 import MentorDashboard from "../pages/mentor/MentorDashboard";
 import ManageAlumni from "../pages/admin/ManageAlumni";
 import MentorAttendancePage from "../pages/mentor/MentorAttendancePage"; // real mentor mark-attendance page
 // import StudentAttendancePage from '../pages/mentor/AttendancePage'; // misplaced file, actually shows a student's own attendance
 import AssignmentsPage from "../pages/mentor/AssignmentsPage";
+import ApplicantsPage from "../pages/mentor/ApplicantsPage";
 
 import StudentDashboard from "../pages/student/StudentDashboard";
 import MyAttendance from "../pages/student/MyAttendance";
@@ -40,8 +40,6 @@ export default function AppRoutes() {
       <Route path="/" element={<HomeRoute />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
-      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-      <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
       <Route path="/resources" element={<ResourceLibraryPage />} />
       <Route path="/alumni" element={<AlumniPage />} />
       <Route path="/leaderboard" element={<LeaderboardPage />} />
@@ -75,6 +73,14 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={["admin"]}>
             <ManageApplications />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/assignments"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <ManageAssignments />
           </ProtectedRoute>
         }
       />
@@ -156,6 +162,14 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={["mentor"]}>
             <AssignmentsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/mentor/applicants"
+        element={
+          <ProtectedRoute allowedRoles={["mentor"]}>
+            <ApplicantsPage />
           </ProtectedRoute>
         }
       />
