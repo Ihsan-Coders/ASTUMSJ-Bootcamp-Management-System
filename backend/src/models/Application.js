@@ -42,11 +42,12 @@ const applicationSchema = new mongoose.Schema(
       required: [true, 'Gender is required'],
       trim: true,
     },
+
     phoneNumber: {
-  type: String,
-  required: [true, 'Phone number is required'],
-  trim: true,
-},
+      type: String,
+      required: [true, 'Phone number is required'],
+      trim: true,
+    },
 
     dailyCommitmentHours: {
       type: Number,
@@ -69,7 +70,7 @@ const applicationSchema = new mongoose.Schema(
     // overlapping flags:
     //   Pending Review     -> just submitted, awaiting admin review
     //   Interview          -> admin approved, mentor may now be assigned
-    //   Interview Completed-> mentor has submitted score/recommendation
+    //   Interview Completed-> mentor has submitted scored answers + a note
     //                         (wired in Day 2, not this recovery step)
     //   Rejected           -> rejected by admin at initial review — terminal
     //   Passed             -> admin final decision: passed — terminal
@@ -91,18 +92,26 @@ const applicationSchema = new mongoose.Schema(
     },
 
     // Populated by the mentor during the interview stage (Day 2 Phase 3).
-    // Present now as part of the data foundation so nothing needs to be
-    // re-modeled later.
-    interviewScore: {
-      type: Number,
-      min: 0,
-      max: 100,
-      default: null,
-    },
+    // Populated by the mentor during the interview stage. Each entry
+    // snapshots the question's text and maxScore at submission time, so
+    // later edits/deletions to InterviewQuestion never alter a completed
+    // interview's record.
+    interviewAnswers: [
+      {
+        question: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'InterviewQuestion',
+        },
+        questionText: { type: String, required: true },
+        maxScore: { type: Number, required: true },
+        score: { type: Number, required: true, min: 0 },
+      },
+    ],
 
-    mentorRecommendation: {
+    // The mentor's overall note explaining the scores given above.
+    interviewNote: {
       type: String,
-      enum: ['pass', 'fail', null],
+      trim: true,
       default: null,
     },
   },

@@ -27,20 +27,12 @@ export default function ApplicationTable({ refreshKey }) {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState(null);
   const [assigning, setAssigning] = useState(null);
-
-  // Action state
   const [actionError, setActionError] = useState("");
-  const [actionSuccess, setActionSuccess] = useState("");
   const [actioningId, setActioningId] = useState(null);
-
-  // Confirmation state
-  const [confirmation, setConfirmation] = useState(null);
 
   const fetchApplications = () => {
     const params = {};
     if (status !== "all") params.status = status;
-
-    setLoading(true);
 
     getApplications(params)
       .then((res) => {
@@ -48,111 +40,53 @@ export default function ApplicationTable({ refreshKey }) {
         setError("");
       })
       .catch((err) =>
-        setError(
-          err?.response?.data?.message || "Failed to load applications"
-        )
+        setError(err?.response?.data?.message || "Failed to load applications"),
       )
       .finally(() => setLoading(false));
   };
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchApplications();
   }, [refreshKey, status]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Show a success message and automatically remove it
-  const showSuccess = (message) => {
-    setActionSuccess(message);
-    setActionError("");
-
-    setTimeout(() => {
-      setActionSuccess("");
-    }, 4000);
-  };
-
   const handleApprove = async (application) => {
     setActionError("");
-    setActionSuccess("");
     setActioningId(application._id);
-
     try {
       await approveApplication(application._id);
-      await fetchApplications();
-
-      showSuccess(`${application.name}'s application has been approved.`);
+      fetchApplications();
     } catch (err) {
-      setActionError(
-        err?.response?.data?.message || "Failed to approve application"
-      );
+      setActionError(err?.response?.data?.message || "Failed to approve application");
     } finally {
       setActioningId(null);
     }
   };
 
-  const handleReject = (application) => {
-    setConfirmation({
-      type: "reject",
-      application,
-      title: "Reject Application",
-      message: `Are you sure you want to reject ${application.name}'s application?`,
-      confirmText: "Reject Application",
-    });
-  };
-
-  const handleFinalDecision = (application, decision) => {
-    const isPass = decision === "pass";
-
-    setConfirmation({
-      type: decision,
-      application,
-      title: isPass ? "Accept Application" : "Decline Application",
-      message: isPass
-        ? `Are you sure you want to accept ${application.name}?`
-        : `Are you sure you want to decline ${application.name}?`,
-      confirmText: isPass ? "Accept Application" : "Decline Application",
-    });
-  };
-
-  const executeConfirmation = async () => {
-    if (!confirmation) return;
-
-    const { type, application } = confirmation;
-
-    setConfirmation(null);
+  const handleReject = async (application) => {
+    if (!window.confirm(`Reject ${application.name}'s application?`)) return;
     setActionError("");
-    setActionSuccess("");
     setActioningId(application._id);
-
     try {
-      if (type === "reject") {
-        await rejectApplication(application._id);
-        await fetchApplications();
-
-        showSuccess(`${application.name}'s application has been rejected.`);
-      } else {
-        await finalDecision(application._id, type);
-        await fetchApplications();
-
-        if (type === "pass") {
-          showSuccess(`${application.name} has been accepted.`);
-        } else {
-          showSuccess(`${application.name} has been declined.`);
-        }
-      }
+      await rejectApplication(application._id);
+      fetchApplications();
     } catch (err) {
-      if (type === "reject") {
-        setActionError(
-          err?.response?.data?.message ||
-            "Failed to reject application"
-        );
-      } else {
-        const action = type === "pass" ? "accept" : "decline";
+      setActionError(err?.response?.data?.message || "Failed to reject application");
+    } finally {
+      setActioningId(null);
+    }
+  };
 
-        setActionError(
-          err?.response?.data?.message ||
-            `Failed to ${action} applicant`
-        );
-      }
+  const handleFinalDecision = async (application, decision) => {
+    const verb = decision === "pass" ? "accept" : "decline";
+    if (!window.confirm(`${verb === "accept" ? "Accept" : "Decline"} ${application.name}?`))
+      return;
+    setActionError("");
+    setActioningId(application._id);
+    try {
+      await finalDecision(application._id, decision);
+      fetchApplications();
+    } catch (err) {
+      setActionError(err?.response?.data?.message || `Failed to ${verb} applicant`);
     } finally {
       setActioningId(null);
     }
@@ -161,7 +95,6 @@ export default function ApplicationTable({ refreshKey }) {
   const visibleApplications = search.trim()
     ? applications.filter((app) => {
         const term = search.trim().toLowerCase();
-
         return (
           app.name?.toLowerCase().includes(term) ||
           app.email?.toLowerCase().includes(term)
@@ -175,7 +108,6 @@ export default function ApplicationTable({ refreshKey }) {
         <h3 className="text-lg font-semibold text-text-primary">
           Applications
         </h3>
-
         <div className="flex gap-2">
           <input
             type="text"
@@ -184,7 +116,6 @@ export default function ApplicationTable({ refreshKey }) {
             onChange={(e) => setSearch(e.target.value)}
             className="p-2 rounded border border-border bg-background text-text-primary text-sm"
           />
-
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
@@ -199,103 +130,8 @@ export default function ApplicationTable({ refreshKey }) {
         </div>
       </div>
 
-      {/* Error message card */}
       {(error || actionError) && (
-        <div className="mb-4 rounded-lg border border-danger/30 bg-danger/10 px-4 py-3 flex items-start gap-3">
-          <div className="text-danger text-lg">!</div>
-
-          <div className="flex-1">
-            <p className="font-medium text-danger">Something went wrong</p>
-            <p className="text-sm text-text-secondary mt-1">
-              {error || actionError}
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => {
-              setError("");
-              setActionError("");
-            }}
-            className="text-text-secondary hover:text-text-primary text-lg"
-          >
-            ×
-          </button>
-        </div>
-      )}
-
-      {/* Success message card */}
-      {actionSuccess && (
-        <div className="mb-4 rounded-lg border border-emerald/30 bg-emerald/10 px-4 py-3 flex items-start gap-3">
-          <div className="text-emerald text-lg">✓</div>
-
-          <div className="flex-1">
-            <p className="font-medium text-emerald">Success</p>
-            <p className="text-sm text-text-secondary mt-1">
-              {actionSuccess}
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setActionSuccess("")}
-            className="text-text-secondary hover:text-text-primary text-lg"
-          >
-            ×
-          </button>
-        </div>
-      )}
-
-      {/* Confirmation message card */}
-      {confirmation && (
-        <div className="mb-4 rounded-lg border border-gold/30 bg-gold/10 px-4 py-4">
-          <div className="flex items-start gap-3">
-            <div className="text-gold text-xl">!</div>
-
-            <div className="flex-1">
-              <h4 className="font-semibold text-text-primary">
-                {confirmation.title}
-              </h4>
-
-              <p className="text-sm text-text-secondary mt-1">
-                {confirmation.message}
-              </p>
-
-              <div className="flex gap-2 mt-4">
-                <button
-                  type="button"
-                  onClick={executeConfirmation}
-                  disabled={actioningId === confirmation.application._id}
-                  className={
-                    confirmation.type === "reject" ||
-                    confirmation.type === "fail"
-                      ? "px-4 py-2 rounded-lg bg-danger text-white text-sm font-medium hover:opacity-90 disabled:opacity-50"
-                      : "px-4 py-2 rounded-lg bg-emerald text-white text-sm font-medium hover:opacity-90 disabled:opacity-50"
-                  }
-                >
-                  {confirmation.confirmText}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setConfirmation(null)}
-                  disabled={actioningId === confirmation.application._id}
-                  className="px-4 py-2 rounded-lg border border-border text-text-secondary text-sm font-medium hover:bg-background disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setConfirmation(null)}
-              className="text-text-secondary hover:text-text-primary text-lg"
-            >
-              ×
-            </button>
-          </div>
-        </div>
+        <p className="text-danger text-sm mb-3">{error || actionError}</p>
       )}
 
       <Table
@@ -303,50 +139,31 @@ export default function ApplicationTable({ refreshKey }) {
         data={visibleApplications}
         emptyMessage="No applications found"
         columns={[
-          {
-            key: "name",
-            label: "Name",
-          },
-
-          {
-            key: "email",
-            label: "Email",
-          },
-
-          {
-            key: "department",
-            label: "Department",
-          },
-
+          { key: "name", label: "Name" },
+          { key: "email", label: "Email" },
+          { key: "department", label: "Department" },
           {
             key: "status",
             label: "Status",
             render: (row) => (
               <span>
                 {row.status}
-
                 {row.status === "Interview Completed" &&
-                  row.mentorRecommendation && (
-                    <span
-                      className={
-                        row.mentorRecommendation === "pass"
-                          ? "text-emerald text-xs ml-1"
-                          : "text-danger text-xs ml-1"
-                      }
-                    >
-                      (mentor: {row.mentorRecommendation})
+                  row.interviewAnswers?.length > 0 && (
+                    <span className="text-gold text-xs ml-1">
+                      (score:{" "}
+                      {row.interviewAnswers.reduce((s, a) => s + a.score, 0)}/
+                      {row.interviewAnswers.reduce((s, a) => s + a.maxScore, 0)})
                     </span>
                   )}
               </span>
             ),
           },
-
           {
             key: "assignedMentor",
             label: "Mentor",
             render: (row) => row.assignedMentor?.name || "—",
           },
-
           {
             key: "createdAt",
             label: "Submitted",
@@ -355,11 +172,9 @@ export default function ApplicationTable({ refreshKey }) {
                 ? new Date(row.createdAt).toLocaleDateString()
                 : "—",
           },
-
           {
             key: "actions",
             label: "Actions",
-
             render: (row) => (
               <div className="flex items-center gap-3">
                 <button
@@ -376,11 +191,8 @@ export default function ApplicationTable({ refreshKey }) {
                       disabled={actioningId === row._id}
                       className="text-emerald hover:underline text-sm disabled:opacity-50"
                     >
-                      {actioningId === row._id
-                        ? "Processing..."
-                        : "Approve"}
+                      Approve
                     </button>
-
                     <button
                       onClick={() => handleReject(row)}
                       disabled={actioningId === row._id}
@@ -396,9 +208,7 @@ export default function ApplicationTable({ refreshKey }) {
                     onClick={() => setAssigning(row)}
                     className="text-gold hover:underline text-sm"
                   >
-                    {row.assignedMentor
-                      ? "Reassign Mentor"
-                      : "Assign Mentor"}
+                    {row.assignedMentor ? "Reassign Mentor" : "Assign Mentor"}
                   </button>
                 )}
 
@@ -411,7 +221,6 @@ export default function ApplicationTable({ refreshKey }) {
                     >
                       Accept
                     </button>
-
                     <button
                       onClick={() => handleFinalDecision(row, "fail")}
                       disabled={actioningId === row._id}
@@ -427,7 +236,6 @@ export default function ApplicationTable({ refreshKey }) {
         ]}
       />
 
-      {/* Application details modal */}
       <Modal
         isOpen={!!selected}
         onClose={() => setSelected(null)}
@@ -439,89 +247,77 @@ export default function ApplicationTable({ refreshKey }) {
               <span className="text-text-secondary">Email:</span>{" "}
               {selected.email}
             </p>
-
             <p>
-              <span className="text-text-secondary">
-                Academic year:
-              </span>{" "}
+              <span className="text-text-secondary">Academic year:</span>{" "}
               {selected.academicYear}
             </p>
-
             <p>
-              <span className="text-text-secondary">
-                Department:
-              </span>{" "}
+              <span className="text-text-secondary">Department:</span>{" "}
               {selected.department}
             </p>
-
             <p>
               <span className="text-text-secondary">Gender:</span>{" "}
               {selected.gender}
             </p>
-
             <p>
               <span className="text-text-secondary">Phone:</span>{" "}
               {selected.phoneNumber}
             </p>
-
             <p>
               <span className="text-text-secondary">
                 Daily commitment:
               </span>{" "}
               {selected.dailyCommitmentHours} hrs/day
             </p>
-
             <p>
               <span className="text-text-secondary">Status:</span>{" "}
               {selected.status}
             </p>
-
             <p>
-              <span className="text-text-secondary">
-                Assigned mentor:
-              </span>{" "}
+              <span className="text-text-secondary">Assigned mentor:</span>{" "}
               {selected.assignedMentor
                 ? `${selected.assignedMentor.name} (${selected.assignedMentor.email})`
                 : "Unassigned"}
             </p>
-
-            {selected.interviewScore !== null &&
-              selected.interviewScore !== undefined && (
-                <p>
-                  <span className="text-text-secondary">
-                    Interview score:
-                  </span>{" "}
-                  {selected.interviewScore}
-                </p>
-              )}
-
-            {selected.mentorRecommendation && (
-              <p>
-                <span className="text-text-secondary">
-                  Mentor recommendation:
-                </span>{" "}
-                {selected.mentorRecommendation}
-              </p>
+            {selected.interviewAnswers?.length > 0 && (
+              <div>
+                <p className="text-text-secondary mb-1">Interview results:</p>
+                <div className="space-y-1">
+                  {selected.interviewAnswers.map((a, i) => (
+                    <p key={i}>
+                      {a.questionText}: {a.score}/{a.maxScore}
+                    </p>
+                  ))}
+                  <p className="font-medium">
+                    Total:{" "}
+                    {selected.interviewAnswers.reduce((s, a) => s + a.score, 0)}
+                    /
+                    {selected.interviewAnswers.reduce(
+                      (s, a) => s + a.maxScore,
+                      0,
+                    )}
+                  </p>
+                </div>
+              </div>
             )}
-
+            {selected.interviewNote && (
+              <div>
+                <p className="text-text-secondary mb-1">Mentor's note:</p>
+                <p className="whitespace-pre-wrap">{selected.interviewNote}</p>
+              </div>
+            )}
             {selected.codeforcesHandle && (
               <p>
-                <span className="text-text-secondary">
-                  Codeforces:
-                </span>{" "}
+                <span className="text-text-secondary">Codeforces:</span>{" "}
                 {selected.codeforcesHandle}
               </p>
             )}
-
             {selected.leetcodeHandle && (
               <p>
-                <span className="text-text-secondary">
-                  LeetCode:
-                </span>{" "}
+                <span className="text-text-secondary">LeetCode:</span>{" "}
                 {selected.leetcodeHandle}
               </p>
             )}
-
             {selected.githubUrl && (
               <p>
                 <span className="text-text-secondary">GitHub:</span>{" "}
@@ -535,15 +331,9 @@ export default function ApplicationTable({ refreshKey }) {
                 </a>
               </p>
             )}
-
             <div>
-              <p className="text-text-secondary mb-1">
-                Motivation:
-              </p>
-
-              <p className="whitespace-pre-wrap">
-                {selected.motivation}
-              </p>
+              <p className="text-text-secondary mb-1">Motivation:</p>
+              <p className="whitespace-pre-wrap">{selected.motivation}</p>
             </div>
           </div>
         )}

@@ -85,17 +85,36 @@ export default function ApplicantsPage() {
                   onSubmitted={fetchApplicants}
                 />
               ) : (
-                <div className="border-t border-border/50 pt-3 space-y-1">
+                <div className="border-t border-border/50 pt-3 space-y-2">
                   <p className="text-sm text-text-secondary">
                     {STATUS_LABEL[applicant.status] || applicant.status}
                   </p>
-                  {applicant.interviewScore !== null &&
-                    applicant.interviewScore !== undefined && (
-                      <p className="text-sm text-text-primary">
-                        Your score: {applicant.interviewScore} · Your
-                        recommendation: {applicant.mentorRecommendation}
+                  {applicant.interviewAnswers?.length > 0 && (
+                    <div className="space-y-1">
+                      {applicant.interviewAnswers.map((a, i) => (
+                        <p key={i} className="text-sm text-text-primary">
+                          {a.questionText}: {a.score}/{a.maxScore}
+                        </p>
+                      ))}
+                      <p className="text-sm text-text-primary font-medium">
+                        Total:{" "}
+                        {applicant.interviewAnswers.reduce(
+                          (sum, a) => sum + a.score,
+                          0,
+                        )}
+                        /
+                        {applicant.interviewAnswers.reduce(
+                          (sum, a) => sum + a.maxScore,
+                          0,
+                        )}
                       </p>
-                    )}
+                      {applicant.interviewNote && (
+                        <p className="text-sm text-text-secondary whitespace-pre-wrap">
+                          Your note: {applicant.interviewNote}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

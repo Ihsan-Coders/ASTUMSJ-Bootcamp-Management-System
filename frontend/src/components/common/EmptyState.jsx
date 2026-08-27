@@ -1,6 +1,6 @@
 export default function EmptyState({
   message = "No data available",
-  icon = "📭",
+  icon = "",
 }) {
   return (
     <div className="text-center py-10 text-text-secondary">

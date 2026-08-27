@@ -10,6 +10,7 @@ const userRoutes = require("./user.routes");
 const assignmentRoutes = require("./assignment.routes");
 const submissionRoutes = require("./submission.routes");
 const applicationRoutes = require("./application.routes");
+const interviewQuestionRoutes = require("./interviewQuestion.routes");
 const leaderboardRoutes = require("./leaderboard.routes");
 const progressRoutes = require("./progress.routes");
 
@@ -33,6 +34,7 @@ router.use("/announcements", require("./announcement.routes"));
 router.use("/assignments", assignmentRoutes);
 router.use("/submissions", submissionRoutes);
 router.use("/applications", applicationRoutes);
+router.use("/interview-questions", interviewQuestionRoutes);
 router.use("/leaderboard", leaderboardRoutes);
 
 // Progress routes
