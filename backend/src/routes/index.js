@@ -11,6 +11,8 @@ const assignmentRoutes = require("./assignment.routes");
 const submissionRoutes = require("./submission.routes");
 const leaderboardRoutes = require("./leaderboard.routes");
 const progressRoutes = require("./progress.routes");
+const dsaProblemRoutes = require("./dsaProblem.routes");
+router.use("/dsa-problems", dsaProblemRoutes);
 router.use("/contests", require("./contest.routes"));
 router.use("/attendance", require("./attendance.routes"));
 router.use("/progress", progressRoutes);
