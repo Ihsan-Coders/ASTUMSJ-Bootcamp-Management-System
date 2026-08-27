@@ -17,6 +17,7 @@ import {
   TrendingUp,
   CalendarDays,
   UserRound,
+  Code2,
 } from "lucide-react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import DarkModeToggle from "./DarkModeToggle";
@@ -76,6 +77,11 @@ const ROLE_LINKS = {
       icon: CalendarDays,
     },
     {
+      label: "Contests",
+      path: "/admin/contests",
+      icon: ClipboardList,
+    },
+    {
       label: "Leaderboard",
       path: "/admin/leaderboard",
       icon: Crown,
@@ -119,6 +125,11 @@ const ROLE_LINKS = {
       icon: TrendingUp,
     },
     {
+      label: "Contests",
+      path: "/mentor/contests",
+      icon: ClipboardList,
+    },
+    {
       label: "Leaderboard",
       path: "/mentor/leaderboard",
       icon: Crown,
@@ -147,6 +158,11 @@ const ROLE_LINKS = {
       icon: ClipboardList,
     },
     {
+      label: "DSA Activity",
+      path: "/student/dsa-activity",
+      icon: Code2,
+    },
+    {
       label: "My Progress",
       path: "/student/progress",
       icon: TrendingUp,
@@ -165,6 +181,11 @@ const ROLE_LINKS = {
       label: "Announcements",
       path: "/student/announcements",
       icon: Megaphone,
+    },
+    {
+      label: "Contests",
+      path: "/student/contests",
+      icon: ClipboardList,
     },
     {
       label: "Timeline",
