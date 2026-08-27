@@ -5,11 +5,6 @@ export const getResources = (params) =>
 
 // `data` may be a plain object (Link/Video resources) or a FormData instance
 // (Document resources, which include a real file upload).
-export const createResource = (data) => {
-  const isFormData = data instanceof FormData;
-  return axiosInstance.post("/resources", data, {
-    headers: isFormData ? { "Content-Type": "multipart/form-data" } : undefined,
-  });
-};
+export const createResource = (data) => axiosInstance.post("/resources", data);
 
 export const deleteResource = (id) => axiosInstance.delete(`/resources/${id}`);
