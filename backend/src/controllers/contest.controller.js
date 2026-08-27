@@ -1,11 +1,14 @@
 const Contest = require("../models/Contest");
 const ContestResult = require("../models/ContestResult");
 const User = require("../models/User");
-
 const {
   validateHandle,
   fetchStudentContestResult,
 } = require("../services/codeforces.service");
+
+// ============================================================
+// CREATE CONTEST
+// ============================================================
 
 const createContest = async (req, res) => {
   try {
@@ -20,6 +23,8 @@ const createContest = async (req, res) => {
       message: "Contest created",
     });
   } catch (err) {
+    console.error("createContest error:", err);
+
     res.status(500).json({
       success: false,
       data: null,
@@ -28,14 +33,22 @@ const createContest = async (req, res) => {
   }
 };
 
+// ============================================================
+// GET ALL CONTESTS
+// ============================================================
+
 const getContests = async (req, res) => {
   try {
     const { batchId } = req.query;
+
     const filter = batchId ? { batch: batchId } : {};
 
-    const contests = await Contest.find(filter).sort({
-      startTime: -1,
-    });
+    const contests = await Contest.find(filter)
+      .populate("batch", "name")
+      .populate("createdBy", "name email")
+      .sort({
+        startTime: -1,
+      });
 
     res.status(200).json({
       success: true,
@@ -43,6 +56,8 @@ const getContests = async (req, res) => {
       message: "Contests fetched",
     });
   } catch (err) {
+    console.error("getContests error:", err);
+
     res.status(500).json({
       success: false,
       data: null,
@@ -51,9 +66,15 @@ const getContests = async (req, res) => {
   }
 };
 
+// ============================================================
+// GET SINGLE CONTEST
+// ============================================================
+
 const getContestById = async (req, res) => {
   try {
-    const contest = await Contest.findById(req.params.id);
+    const contest = await Contest.findById(req.params.id)
+      .populate("batch", "name")
+      .populate("createdBy", "name email");
 
     if (!contest) {
       return res.status(404).json({
@@ -69,6 +90,8 @@ const getContestById = async (req, res) => {
       message: "Contest fetched",
     });
   } catch (err) {
+    console.error("getContestById error:", err);
+
     res.status(500).json({
       success: false,
       data: null,
@@ -77,11 +100,16 @@ const getContestById = async (req, res) => {
   }
 };
 
+// ============================================================
+// FETCH CONTEST RESULTS
+// ============================================================
+
 const fetchResults = async (req, res) => {
   try {
     // ---------------------------------------------------------
     // 1. Find contest
     // ---------------------------------------------------------
+
     const contest = await Contest.findById(req.params.id);
 
     if (!contest) {
@@ -93,8 +121,9 @@ const fetchResults = async (req, res) => {
     }
 
     // ---------------------------------------------------------
-    // 2. Find active students in the contest batch
+    // 2. Find active students in contest batch
     // ---------------------------------------------------------
+
     const students = await User.find({
       batch: contest.batch,
       role: "student",
@@ -111,8 +140,9 @@ const fetchResults = async (req, res) => {
     );
 
     // ---------------------------------------------------------
-    // 3. Save students who don't have Codeforces handles
+    // 3. Save students without Codeforces handles
     // ---------------------------------------------------------
+
     await Promise.all(
       studentsWithoutHandle.map((student) =>
         ContestResult.findOneAndUpdate(
@@ -136,6 +166,7 @@ const fetchResults = async (req, res) => {
     // ---------------------------------------------------------
     // 4. No students with handles
     // ---------------------------------------------------------
+
     if (studentsWithHandle.length === 0) {
       return res.status(200).json({
         success: true,
@@ -153,14 +184,16 @@ const fetchResults = async (req, res) => {
     // ---------------------------------------------------------
     // Counters
     // ---------------------------------------------------------
+
     let fetchedCount = 0;
     let notParticipatedCount = 0;
     let invalidHandleCount = 0;
     let apiUnavailableCount = 0;
 
     // ---------------------------------------------------------
-    // 5. Fetch each student's contest result
+    // 5. Fetch each student's result
     // ---------------------------------------------------------
+
     await Promise.all(
       studentsWithHandle.map(async (student) => {
         const handle = student.codeforcesHandle.trim();
@@ -168,6 +201,7 @@ const fetchResults = async (req, res) => {
         // -----------------------------------------------------
         // 5a. Validate Codeforces handle
         // -----------------------------------------------------
+
         const validation = await validateHandle(handle);
 
         if (!validation.valid) {
@@ -199,19 +233,18 @@ const fetchResults = async (req, res) => {
         }
 
         // -----------------------------------------------------
-        // 5b. Fetch student's actual contest result
-        //
-        // This first checks standings.
-        // If the student isn't there, it checks submissions.
+        // 5b. Fetch actual contest result
         // -----------------------------------------------------
+
         const result = await fetchStudentContestResult(
           contest.codeforcesContestId,
           handle,
         );
 
         // -----------------------------------------------------
-        // 5c. Codeforces API unavailable
+        // 5c. API unavailable / invalid handle
         // -----------------------------------------------------
+
         if (!result.success) {
           await ContestResult.findOneAndUpdate(
             {
@@ -244,6 +277,7 @@ const fetchResults = async (req, res) => {
         // -----------------------------------------------------
         // 5d. Student did not participate
         // -----------------------------------------------------
+
         if (!result.participated) {
           await ContestResult.findOneAndUpdate(
             {
@@ -262,12 +296,14 @@ const fetchResults = async (req, res) => {
           );
 
           notParticipatedCount++;
+
           return;
         }
 
         // -----------------------------------------------------
         // 5e. Student participated
         // -----------------------------------------------------
+
         await ContestResult.findOneAndUpdate(
           {
             contest: contest._id,
@@ -295,8 +331,10 @@ const fetchResults = async (req, res) => {
     // ---------------------------------------------------------
     // 6. Response
     // ---------------------------------------------------------
+
     res.status(200).json({
       success: true,
+
       data: {
         fetched: fetchedCount,
         notParticipated: notParticipatedCount,
@@ -304,6 +342,7 @@ const fetchResults = async (req, res) => {
         invalidHandle: invalidHandleCount,
         apiUnavailable: apiUnavailableCount,
       },
+
       message: "Results fetched from Codeforces",
     });
   } catch (err) {
@@ -316,26 +355,139 @@ const fetchResults = async (req, res) => {
     });
   }
 };
+
+// ============================================================
+// GET CONTEST LEADERBOARD
+// ============================================================
+
 const getContestLeaderboard = async (req, res) => {
   try {
-    // Show ALL results, not just successful fetches — admin needs visibility
-    // into who's missing a handle, has an invalid one, etc. Fetched results
-    // sort to the top by rank; everything else follows, grouped together.
-    const results = await ContestResult.find({ contest: req.params.id })
-      .populate("student", "name")
-      .sort({ rank: 1 }); // null ranks (non-Fetched statuses) sort last automatically
+    // ---------------------------------------------------------
+    // 1. Find contest
+    // ---------------------------------------------------------
 
-    res
-      .status(200)
-      .json({
-        success: true,
-        data: results,
-        message: "Contest leaderboard fetched",
+    const contest = await Contest.findById(req.params.id)
+      .populate("batch", "name")
+      .populate("createdBy", "name email");
+
+    if (!contest) {
+      return res.status(404).json({
+        success: false,
+        data: null,
+        message: "Contest not found",
       });
+    }
+
+    // ---------------------------------------------------------
+    // 2. Get all contest results
+    // ---------------------------------------------------------
+
+    const results = await ContestResult.find({
+      contest: contest._id,
+    })
+      .populate("student", "name email codeforcesHandle")
+      .sort({
+        rank: 1,
+        points: -1,
+        problemsSolved: -1,
+      });
+
+    // ---------------------------------------------------------
+    // 3. Build clean leaderboard
+    // ---------------------------------------------------------
+
+    const leaderboard = results.map((result, index) => ({
+      position: result.status === "Fetched" ? index + 1 : null,
+
+      student: result.student
+        ? {
+            id: result.student._id,
+            name: result.student.name,
+            email: result.student.email,
+          }
+        : null,
+
+      codeforcesHandle:
+        result.student?.codeforcesHandle || result.codeforcesHandle || "",
+
+      rank: result.rank,
+
+      points: result.points ?? 0,
+
+      problemsSolved: result.problemsSolved ?? 0,
+
+      solvedProblemIndexes: result.solvedProblemIndexes || [],
+
+      status: result.status,
+
+      fetchedAt: result.fetchedAt,
+    }));
+
+    // ---------------------------------------------------------
+    // 4. Statistics
+    // ---------------------------------------------------------
+
+    const statistics = {
+      totalStudents: leaderboard.length,
+
+      participated: leaderboard.filter((result) => result.status === "Fetched")
+        .length,
+
+      notParticipated: leaderboard.filter(
+        (result) => result.status === "NotParticipated",
+      ).length,
+
+      noHandle: leaderboard.filter((result) => result.status === "NoHandle")
+        .length,
+
+      invalidHandle: leaderboard.filter(
+        (result) => result.status === "InvalidHandle",
+      ).length,
+
+      apiUnavailable: leaderboard.filter(
+        (result) => result.status === "ApiUnavailable",
+      ).length,
+    };
+
+    // ---------------------------------------------------------
+    // 5. Response
+    // ---------------------------------------------------------
+
+    res.status(200).json({
+      success: true,
+
+      data: {
+        contest: {
+          id: contest._id,
+          name: contest.name,
+          contestUrl: contest.contestUrl,
+          batch: contest.batch,
+          startTime: contest.startTime,
+          durationMinutes: contest.durationMinutes,
+          status: contest.status,
+        },
+
+        statistics,
+
+        leaderboard,
+      },
+
+      message: "Contest leaderboard fetched",
+    });
   } catch (err) {
-    res.status(500).json({ success: false, data: null, message: err.message });
+    console.error("getContestLeaderboard error:", err);
+
+    res.status(500).json({
+      success: false,
+      data: null,
+      message: err.message,
+    });
   }
 };
+
+// ============================================================
+// EXPORTS
+// ============================================================
 
 module.exports = {
   createContest,
