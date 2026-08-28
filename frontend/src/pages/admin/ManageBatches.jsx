@@ -39,12 +39,11 @@ import { useState } from "react";
 import BatchForm from "../../components/admin/BatchForm";
 import BatchTable from "../../components/admin/BatchTable";
 import AssignMentorModal from "../../components/admin/AssignMentorModal";
-import EnrollStudentModal from "../../components/admin/EnrollStudentModal";
+
 
 export default function ManageBatches() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [assignOpen, setAssignOpen] = useState(false);
-  const [enrollOpen, setEnrollOpen] = useState(false);
 
   const bumpRefresh = () => setRefreshKey((k) => k + 1);
 
@@ -55,12 +54,6 @@ export default function ManageBatches() {
           Manage Batches
         </h1>
         <div className="flex gap-2">
-          <button
-            onClick={() => setEnrollOpen(true)}
-            className="px-4 py-2 rounded text-sm font-semibold text-obsidian bg-gradient-to-r from-gold to-emerald"
-          >
-            Enroll Student
-          </button>
           <button
             onClick={() => setAssignOpen(true)}
             className="px-4 py-2 rounded text-sm font-semibold text-obsidian bg-gradient-to-r from-gold to-emerald"
@@ -81,11 +74,6 @@ export default function ManageBatches() {
         onAssigned={bumpRefresh}
       />
 
-      <EnrollStudentModal
-        isOpen={enrollOpen}
-        onClose={() => setEnrollOpen(false)}
-        onEnrolled={bumpRefresh}
-      />
     </div>
   );
 }
