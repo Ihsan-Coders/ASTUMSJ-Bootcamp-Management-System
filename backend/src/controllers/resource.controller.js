@@ -20,7 +20,7 @@ const createResource = asyncHandler(async (req, res) => {
 
 
   if (type === "Document") {
-    if (!req.file) {
+    if (!file) {
       return res.status(400).json({
         success: false,
         data: null,
@@ -28,12 +28,12 @@ const createResource = asyncHandler(async (req, res) => {
       });
     }
 
-    const result = await uploadToCloudinary(req.file, "astumsj-resources");
+    const result = await uploadToCloudinary(file, "astumsj-resources");
 
     resourceUrl = result.secure_url;
-    fileName = req.file.originalname;
-    fileSize = req.file.size;
-    mimeType = req.file.mimetype;
+    fileName = file.originalname;
+    fileSize = file.size;
+    mimeType = file.mimetype;
     cloudinaryPublicId = result.public_id;
   } else if (!resourceUrl) {
     return res.status(400).json({

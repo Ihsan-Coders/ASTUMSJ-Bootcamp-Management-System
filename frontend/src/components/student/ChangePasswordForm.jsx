@@ -52,6 +52,16 @@ export default function ChangePassword() {
       return;
     }
 
+    const missing = [];
+    if (!/[a-z]/.test(form.newPassword)) missing.push("a lowercase letter");
+    if (!/[A-Z]/.test(form.newPassword)) missing.push("an uppercase letter");
+    if (!/\d/.test(form.newPassword)) missing.push("a number");
+    if (!/[^A-Za-z0-9]/.test(form.newPassword)) missing.push("a special character");
+    if (missing.length > 0) {
+      setError(`New password must include ${missing.join(", ")}.`);
+      return;
+    }
+
     if (form.newPassword !== form.confirmPassword) {
       setError("New passwords do not match.");
       return;
@@ -205,7 +215,7 @@ export default function ChangePassword() {
         </div>
 
         <p className="text-xs text-text-secondary mt-1">
-          Must be at least 8 characters.
+          At least 8 characters, with uppercase, lowercase, a number, and a special character.
         </p>
       </div>
 
