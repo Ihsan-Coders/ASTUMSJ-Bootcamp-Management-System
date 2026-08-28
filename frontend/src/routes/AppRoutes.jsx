@@ -14,7 +14,8 @@ import ReportsPage from "../pages/admin/ReportsPage";
 import ManageAnnouncements from "../pages/admin/ManageAnnouncements";
 import ManageApplications from "../pages/admin/ManageApplications";
 import ManageAssignments from "../pages/admin/ManageAssignments";
-import MentorDashboard from "../pages/mentor/MentorDashboard";
+import MentorDashboard from "../pages/mentor/MentorDashboard"
+import AdminAttendancePage from "../pages/admin/AdminAttendancePage";;
 import ManageAlumni from "../pages/admin/ManageAlumni";
 import MentorAttendancePage from "../pages/mentor/MentorAttendancePage"; // real mentor mark-attendance page
 // import StudentAttendancePage from '../pages/mentor/AttendancePage'; // misplaced file, actually shows a student's own attendance
@@ -134,6 +135,15 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/admin/attendance"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <AdminAttendancePage />
+          </ProtectedRoute>
+        }
+      />
+      
       <Route
         path="/admin/reports"
         element={
