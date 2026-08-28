@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import Table from "../common/Table";
 import Modal from "../common/Modal";
+import { useConfirm } from "../../context/ConfirmContext";
 import AssignApplicationMentorModal from "./AssignApplicationMentorModal";
 import {
   getApplications,
@@ -20,6 +21,7 @@ const STATUS_OPTIONS = [
 ];
 
 export default function ApplicationTable({ refreshKey }) {
+  const confirm = useConfirm();
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -63,7 +65,11 @@ export default function ApplicationTable({ refreshKey }) {
   };
 
   const handleReject = async (application) => {
-    if (!window.confirm(`Reject ${application.name}'s application?`)) return;
+    const ok = await confirm(`Reject ${application.name}'s application?`, {
+      title: "Reject application",
+      confirmLabel: "Reject",
+    });
+    if (!ok) return;
     setActionError("");
     setActioningId(application._id);
     try {
@@ -78,8 +84,11 @@ export default function ApplicationTable({ refreshKey }) {
 
   const handleFinalDecision = async (application, decision) => {
     const verb = decision === "pass" ? "accept" : "decline";
-    if (!window.confirm(`${verb === "accept" ? "Accept" : "Decline"} ${application.name}?`))
-      return;
+    const ok = await confirm(
+      `${verb === "accept" ? "Accept" : "Decline"} ${application.name}?`,
+      { title: "Final decision", confirmLabel: verb === "accept" ? "Accept" : "Decline" }
+    );
+    if (!ok) return;
     setActionError("");
     setActioningId(application._id);
     try {

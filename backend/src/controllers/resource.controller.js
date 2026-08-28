@@ -7,11 +7,17 @@ const asyncHandler = require("../utils/asyncHandler");
 const createResource = asyncHandler(async (req, res) => {
   const { title, description, type, topic, url, batch } = req.body;
 
+  const file = req.files?.file?.[0] || null;
+  const thumbnail = req.files?.thumbnail?.[0] || null;
+
   let resourceUrl = url || "";
   let fileName = null;
   let fileSize = null;
   let mimeType = null;
   let cloudinaryPublicId = null;
+  let thumbnailUrl = null;
+  let thumbnailPublicId = null;
+
 
   if (type === "Document") {
     if (!req.file) {
@@ -37,6 +43,14 @@ const createResource = asyncHandler(async (req, res) => {
     });
   }
 
+   // Thumbnail is optional and independent of resource type — a Link or
+  // Video resource can have one just as much as a Document can.
+  if (thumbnail) {
+    const thumbResult = await uploadToCloudinary(thumbnail, "astumsj-resource-thumbnails");
+    thumbnailUrl = thumbResult.secure_url;
+    thumbnailPublicId = thumbResult.public_id;
+  } 
+
   const resource = await Resource.create({
     title,
     description,
@@ -49,6 +63,8 @@ const createResource = asyncHandler(async (req, res) => {
     fileSize,
     mimeType,
     cloudinaryPublicId,
+    thumbnailUrl,
+    thumbnailPublicId,
   });
 
   res
@@ -118,6 +134,16 @@ const deleteResource = asyncHandler(async (req, res) => {
     }
   }
 
+ if (resource.thumbnailPublicId) {
+    try {
+      await cloudinary.uploader.destroy(resource.thumbnailPublicId, {
+        resource_type: "image",
+      });
+    } catch (err) {
+      console.error("Cloudinary thumbnail cleanup failed:", err.message);
+    }
+  }
+    
   await resource.deleteOne();
 
   res

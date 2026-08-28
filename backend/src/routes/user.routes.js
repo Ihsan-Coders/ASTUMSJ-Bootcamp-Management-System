@@ -9,6 +9,7 @@ const {
   getUsers,
   createUser,
   createMentor,
+  createAdmin,
   updateUser,
   deleteUser,
   getPendingUsers,
@@ -38,6 +39,7 @@ router.use(authorize('admin'));
 router.get('/', getUsers);
 router.post('/',validate(createUserSchema), createUser);
 router.post('/mentors', validate(createUserSchema), createMentor);
+router.post('/admins', validate(createUserSchema), createAdmin);
 router.get('/pending', getPendingUsers);
 router.put('/:id',validateObjectId,validate(updateUserSchema), updateUser);
 router.put('/:id/approve',validateObjectId, approveUser);

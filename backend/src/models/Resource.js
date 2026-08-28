@@ -23,6 +23,11 @@ const resourceSchema = new mongoose.Schema(
     fileSize: { type: Number, default: null },
     mimeType: { type: String, default: null },
     cloudinaryPublicId: { type: String, default: null },
+    
+    // Optional thumbnail image, independent of resource type — a Link or
+    // Video resource can have a thumbnail just as easily as a Document.
+    thumbnailUrl: { type: String, default: null },
+    thumbnailPublicId: { type: String, default: null },
   },
   { timestamps: true },
 );
