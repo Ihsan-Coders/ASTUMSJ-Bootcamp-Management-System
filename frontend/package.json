@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "cp -f src/assets/astu-msj-logo.jpg public/ || true && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
