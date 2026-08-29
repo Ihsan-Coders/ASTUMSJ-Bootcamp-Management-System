@@ -9,6 +9,19 @@ function formatSize(bytes) {
   return `${(kb / 1024).toFixed(1)} MB`;
 }
 
+// The HTML `download` attribute is silently ignored by browsers for
+// cross-origin URLs (Cloudinary is always cross-origin from the app) —
+// that's why "Download" was behaving identically to "Open" (both just
+// navigated to the file). Cloudinary's `fl_attachment` flag tells
+// Cloudinary itself to serve the file with a
+// Content-Disposition: attachment header, which forces an actual browser
+// download regardless of origin. Works for any Cloudinary resource_type
+// (image/video/raw) since it just inserts into the URL path.
+function getDownloadUrl(url) {
+  if (!url || !url.includes("/upload/")) return url;
+  return url.replace("/upload/", "/upload/fl_attachment/");
+}
+
 const TYPE_ICON = { Link: Link2, Document: FileText, Video: Video };
 
 // Fallback shown in place of a real thumbnail image when the resource
@@ -76,10 +89,8 @@ export default function ResourceCard({ resource, canDelete, onDelete, deleting }
         <div className="flex items-center justify-between mt-3">
           {isDownloadable ? (
             <a
-              href={resource.url}
+              href={getDownloadUrl(resource.url)}
               download={resource.fileName}
-              target="_blank"
-              rel="noreferrer"
               onClick={(e) => e.stopPropagation()}
               className="flex items-center gap-1.5 text-xs text-gold hover:underline"
             >
@@ -121,10 +132,8 @@ export default function ResourceCard({ resource, canDelete, onDelete, deleting }
             </a>
             {isDownloadable && (
               <a
-                href={resource.url}
+                href={getDownloadUrl(resource.url)}
                 download={resource.fileName}
-                target="_blank"
-                rel="noreferrer"
                 className="flex items-center gap-1.5 px-4 py-2 rounded border border-border text-sm text-text-primary"
               >
                 <Download size={14} /> Download
