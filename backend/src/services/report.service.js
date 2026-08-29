@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const Batch = require("../models/Batch");
 const Attendance = require("../models/Attendance");
+const Assignment = require("../models/Assignment");
 const Submission = require("../models/Submission");
 
 // PDFKit allows us to create PDF documents on the backend.
@@ -67,6 +68,42 @@ const generatePlatformReport = async () => {
 
   const totalSubmissions = await Submission.countDocuments();
 
+  // Assignment statistics. Per the SRS, Assignment.maxScore is NOT fixed
+  // to 100 (can be 5, 10, 20, 30, 100, etc.) — so an average score has to
+  // be normalized against each submission's own assignment.maxScore
+  // rather than averaged as raw point values, which would be meaningless
+  // across assignments with different scales.
+  const totalAssignments = await Assignment.countDocuments();
+
+  const gradedSubmissions = await Submission.countDocuments({ status: "Graded" });
+  const pendingSubmissions = await Submission.countDocuments({ status: "Submitted" });
+  const resubmissionRequested = await Submission.countDocuments({
+    status: "Resubmission Requested",
+  });
+
+  const gradedWithScores = await Submission.find({
+    status: "Graded",
+    score: { $ne: null },
+  })
+    .select("score assignment")
+    .populate("assignment", "maxScore")
+    .lean();
+
+  const validScores = gradedWithScores.filter(
+    (s) => s.assignment?.maxScore > 0,
+  );
+  const averageScorePercent =
+    validScores.length > 0
+      ? Math.round(
+          (validScores.reduce(
+            (sum, s) => sum + s.score / s.assignment.maxScore,
+            0,
+          ) /
+            validScores.length) *
+            100,
+        )
+      : null;
+
   // Return the complete report.
   return {
     generatedAt: new Date(),
@@ -76,6 +113,13 @@ const generatePlatformReport = async () => {
       totalMentors,
       totalBatches,
       totalSubmissions,
+    },
+    assignmentStats: {
+      totalAssignments,
+      gradedSubmissions,
+      pendingSubmissions,
+      resubmissionRequested,
+      averageScorePercent, // null when there's nothing graded yet — don't show a misleading 0%
     },
     batchReports,
   };
@@ -123,6 +167,27 @@ const generatePDFReport = (reportData) => {
     doc.text(`Total Batches: ${reportData.summary.totalBatches}`);
 
     doc.text(`Total Submissions: ${reportData.summary.totalSubmissions}`);
+
+    doc.moveDown(2);
+  }
+
+  // Assignment statistics.
+  if (reportData.assignmentStats) {
+    const stats = reportData.assignmentStats;
+
+    doc.fontSize(16).fillColor("black").text("Assignment Statistics");
+
+    doc.moveDown(0.5);
+
+    doc.fontSize(11).text(`Total Assignments: ${stats.totalAssignments}`);
+    doc.text(`Graded Submissions: ${stats.gradedSubmissions}`);
+    doc.text(`Pending Submissions: ${stats.pendingSubmissions}`);
+    doc.text(`Resubmission Requested: ${stats.resubmissionRequested}`);
+    doc.text(
+      `Average Score: ${
+        stats.averageScorePercent === null ? "N/A" : `${stats.averageScorePercent}%`
+      }`,
+    );
 
     doc.moveDown(2);
   }

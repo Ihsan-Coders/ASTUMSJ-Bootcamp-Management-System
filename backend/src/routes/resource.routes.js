@@ -15,7 +15,10 @@ router.use(protect);
 router.post(
   "/",
   authorize("admin", "mentor"),
-  upload.single("file"),
+  upload.fields([
+    { name: "file", maxCount: 1 },
+    { name: "thumbnail", maxCount: 1 },
+  ]),
   verifyFileSignature,
   validate(createResourceSchema),
   createResource,

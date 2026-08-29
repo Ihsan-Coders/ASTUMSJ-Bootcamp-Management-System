@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import Modal from "../common/Modal";
+import { useConfirm } from "../../context/ConfirmContext";
 import {
   getInterviewQuestions,
   createInterviewQuestion,
@@ -10,6 +11,7 @@ import {
 const emptyForm = { text: "", maxScore: 10 };
 
 export default function ManageInterviewQuestionsModal({ isOpen, onClose }) {
+  const confirm = useConfirm();
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -74,7 +76,11 @@ export default function ManageInterviewQuestionsModal({ isOpen, onClose }) {
   };
 
   const handleDelete = async (question) => {
-    if (!window.confirm(`Delete this question?\n\n"${question.text}"`)) return;
+    const ok = await confirm(`Delete this question?\n\n"${question.text}"`, {
+      title: "Delete question",
+      confirmLabel: "Delete",
+    });
+    if (!ok) return;
     setError("");
     try {
       await deleteInterviewQuestion(question._id);

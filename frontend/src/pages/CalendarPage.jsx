@@ -17,6 +17,8 @@ import {
 } from "../api/calendar.api";
 import { getBatches } from "../api/batch.api";
 import { useAuth } from "../context/AuthContext";
+import { useConfirm } from "../context/ConfirmContext";
+import { useToast } from "../context/ToastContext";
 
 const EMPTY_FORM = {
   title: "",
@@ -109,6 +111,8 @@ const buildMonthMatrix = (year, month) => {
 
 export default function CalendarPage() {
   const { user } = useAuth();
+  const confirm = useConfirm();
+  const { showToast } = useToast();
   const canManage = user?.role === "admin" || user?.role === "mentor";
 
   const [events, setEvents] = useState([]);
@@ -359,8 +363,9 @@ export default function CalendarPage() {
   // ======================================================
 
   const handleDelete = async (event) => {
-    const confirmed = window.confirm(
+    const confirmed = await confirm(
       `Are you sure you want to delete "${event.title}"?`,
+      { title: "Delete event", confirmLabel: "Delete" }
     );
     if (!confirmed) return;
 
@@ -370,9 +375,10 @@ export default function CalendarPage() {
       setEvents((current) => current.filter((e) => e._id !== event._id));
 
       if (editingEvent?._id === event._id) resetForm();
+      showToast("Event deleted", "success");
     } catch (err) {
       console.error("Failed to delete event:", err);
-      alert(err.response?.data?.message || "Failed to delete event.");
+      showToast(err.response?.data?.message || "Failed to delete event.", "error");
     } finally {
       setActionLoading(false);
     }

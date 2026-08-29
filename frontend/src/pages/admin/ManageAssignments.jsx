@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useConfirm } from "../../context/ConfirmContext";
 import {
   getAssignments,
   updateAssignment,
@@ -8,6 +9,7 @@ import { getBatches } from "../../api/batch.api";
 import AssignmentForm from "../../components/admin/AssignmentForm";
 
 export default function ManageAssignments() {
+  const confirm = useConfirm();
   const [assignments, setAssignments] = useState([]);
   const [batches, setBatches] = useState([]);
   const [batchFilter, setBatchFilter] = useState("all");
@@ -75,7 +77,11 @@ export default function ManageAssignments() {
   };
 
   const handleDelete = async (assignment) => {
-    if (!window.confirm(`Delete "${assignment.title}"?`)) return;
+    const ok = await confirm(`Delete "${assignment.title}"?`, {
+      title: "Delete assignment",
+      confirmLabel: "Delete",
+    });
+    if (!ok) return;
 
     setActionLoading(true);
     try {
