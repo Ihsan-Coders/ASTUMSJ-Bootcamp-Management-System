@@ -48,6 +48,79 @@ const userSchema = new mongoose.Schema(
       default: true,
     },
 
+    applicationStatus: {
+      type: String,
+      enum: [
+        "pending",
+        "rejected",
+        "interview_scheduled",
+        "interview_passed",
+        "interview_failed",
+        "approved",
+        "activated",
+      ],
+      default: "pending",
+      index: true,
+    },
+
+    interviewDate: { type: Date, default: null },
+    interviewTime: { type: String, trim: true, default: null },
+    interviewLocation: { type: String, trim: true, default: null },
+    interviewLink: { type: String, trim: true, default: null },
+    interviewNotes: { type: String, trim: true, default: null },
+    interviewResult: { type: String, enum: ["passed", "failed", null], default: null },
+    applicationReviewedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+    applicationRejectedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+    applicationApprovedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+    interviewScheduledBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+    interviewResultRecordedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+    finalApprovedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+    activatedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+
+    activationTokenHash: {
+      type: String,
+      select: false,
+      default: null,
+    },
+    activationTokenExpires: {
+      type: Date,
+      select: false,
+      default: null,
+    },
+    activationTokenUsed: {
+      type: Boolean,
+      select: false,
+      default: false,
+    },
+
     codeforcesHandle: {
       type: String,
       trim: true,

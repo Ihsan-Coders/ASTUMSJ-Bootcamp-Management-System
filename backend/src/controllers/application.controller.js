@@ -5,6 +5,8 @@ const InterviewQuestion = require('../models/InterviewQuestion');
 const Batch = require('../models/Batch');
 const { hashPassword } = require('../utils/hashPassword');
 const asyncHandler = require('../utils/asyncHandler');
+const { createActivationToken } = require('../utils/studentRegistration');
+const { sendFinalApprovalEmail } = require('../utils/email');
 
 // Statuses that count as "an application already in progress" for the
 // duplicate-email check below. Someone whose earlier application was
@@ -339,8 +341,9 @@ const finalDecision = asyncHandler(async (req, res) => {
     });
   }
 
-  const tempPassword = generateTempPassword();
-  const hashedPassword = await hashPassword(tempPassword);
+  const activationToken = createActivationToken(process.env.CLIENT_URL || 'http://localhost:5173');
+  const placeholderPassword = `${process.env.JWT_SECRET || 'bootcamp'}-${Date.now()}-setlater`;
+  const hashedPassword = await hashPassword(placeholderPassword);
 
   const student = await User.create({
     name: application.name,
@@ -348,7 +351,11 @@ const finalDecision = asyncHandler(async (req, res) => {
     password: hashedPassword,
     role: 'student',
     batch: acceptingBatch._id,
-    isActive: true,
+    isActive: false,
+    applicationStatus: 'approved',
+    activationTokenHash: activationToken.hash,
+    activationTokenExpires: activationToken.expiresAt,
+    activationTokenUsed: false,
   });
 
   acceptingBatch.students.addToSet(student._id);
@@ -357,15 +364,34 @@ const finalDecision = asyncHandler(async (req, res) => {
   application.status = 'Passed';
   await application.save();
 
+  try {
+    await sendFinalApprovalEmail({
+      to: student.email,
+      name: student.name,
+      activateUrl: activationToken.activationUrl,
+    });
+  } catch (error) {
+    console.error('Failed to send activation email for passed applicant:', error.message);
+    student.activationTokenHash = undefined;
+    student.activationTokenExpires = undefined;
+    student.activationTokenUsed = false;
+    await student.save({ validateBeforeSave: false });
+
+    return res.status(500).json({
+      success: false,
+      data: null,
+      message: 'Application marked as passed, but the activation email could not be delivered.',
+    });
+  }
+
   res.status(200).json({
     success: true,
     data: {
       application,
       student: { name: student.name, email: student.email, batch: acceptingBatch.name },
-      tempPassword,
+      message: 'Activation email sent successfully',
     },
-    message:
-      'Application marked as Passed — Student account created. Share the temporary password manually; email sending is not yet configured.',
+    message: 'Application marked as Passed and activation email sent successfully.',
   });
 });
 

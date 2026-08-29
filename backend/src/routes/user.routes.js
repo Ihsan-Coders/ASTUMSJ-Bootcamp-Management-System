@@ -7,6 +7,7 @@ const {
   updateMe,
   changePassword,
   getUsers,
+  getUserById,
   createUser,
   createMentor,
   createAdmin,
@@ -15,6 +16,9 @@ const {
   getPendingUsers,
   approveUser,
   rejectUser,
+  scheduleInterview,
+  recordInterviewResult,
+  finalApproveUser,
 } = require('../controllers/user.controller');
 const validateObjectId = require('../middleware/validateObjectId.middleware');
 const validate = require('../middleware/validate.middleware');
@@ -37,13 +41,22 @@ router.put('/me/password',validate(changePasswordSchema),changePassword);
 // Everything past this point is admin-only.
 router.use(authorize('admin'));
 router.get('/', getUsers);
+router.get('/pending', getPendingUsers);
+router.get('/:id', validateObjectId, getUserById);
 router.post('/',validate(createUserSchema), createUser);
 router.post('/mentors', validate(createUserSchema), createMentor);
 router.post('/admins', validate(createUserSchema), createAdmin);
-router.get('/pending', getPendingUsers);
 router.put('/:id',validateObjectId,validate(updateUserSchema), updateUser);
+router.patch('/:id/approve',validateObjectId, approveUser);
 router.put('/:id/approve',validateObjectId, approveUser);
-router.delete('/:id/reject',validateObjectId, rejectUser);
+router.patch('/:id/reject',validateObjectId, rejectUser);
+router.put('/:id/reject',validateObjectId, rejectUser);
+router.patch('/:id/schedule-interview', validateObjectId, scheduleInterview);
+router.put('/:id/schedule-interview', validateObjectId, scheduleInterview);
+router.patch('/:id/interview-result', validateObjectId, recordInterviewResult);
+router.put('/:id/interview-result', validateObjectId, recordInterviewResult);
+router.patch('/:id/final-approve', validateObjectId, finalApproveUser);
+router.put('/:id/final-approve', validateObjectId, finalApproveUser);
 router.delete('/:id',validateObjectId, deleteUser);
 
 module.exports = router;
