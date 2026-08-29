@@ -6,6 +6,7 @@ export const updateMe = (data) => axiosInstance.put('/users/me', data);
 export const getUsers = (params) => axiosInstance.get('/users', { params });
 export const createUser = (data) => axiosInstance.post('/users', data);
 export const createMentor = (data) => axiosInstance.post('/users/mentors', data);
+export const createAdmin = (data) => axiosInstance.post('/users/admins', data);
 export const updateUser = (id, data) => axiosInstance.put(`/users/${id}`, data);
 export const deleteUser = (id) => axiosInstance.delete(`/users/${id}`);
 export const getPendingUsers = () => axiosInstance.get('/users/pending');
