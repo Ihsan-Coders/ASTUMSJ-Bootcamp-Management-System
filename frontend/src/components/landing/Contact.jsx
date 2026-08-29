@@ -20,17 +20,14 @@ export default function Contact() {
 
     try {
       setLoading(true);
-      console.log('Contact submit — API base:', axiosInstance.defaults.baseURL);
-      const res = await axiosInstance.post("/auth/contact", {
+      await axiosInstance.post("/auth/contact", {
         name: form.name,
         email: form.email,
         message: form.message,
       });
-      console.log('Contact response:', res.data);
       setSent(true);
       setForm({ name: "", email: "", message: "" });
     } catch (err) {
-      console.error('Contact error:', err);
       setError(err?.response?.data?.message || "Failed to send your message. Please try again.");
     } finally {
       setLoading(false);
