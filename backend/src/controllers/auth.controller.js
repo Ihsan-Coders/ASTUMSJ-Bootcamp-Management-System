@@ -229,37 +229,6 @@ const resetPassword = asyncHandler(async (req, res) => {
   });
 });
 
-const contact = asyncHandler(async (req, res) => {
-  const { name, email, message } = req.body;
-
-  if (!name || !email || !message) {
-    return res.status(400).json({
-      success: false,
-      data: null,
-      message: 'Name, email, and message are required',
-    });
-  }
-
-  const hostEmail = 'awela1499@gmail.com';
-
-  await sendEmail({
-    to: hostEmail,
-    subject: `New Contact Message from ${String(name).trim()}`,
-    html: `
-      <p><strong>Name:</strong> ${String(name).trim()}</p>
-      <p><strong>Email:</strong> ${String(email).trim()}</p>
-      <p><strong>Message:</strong></p>
-      <p>${String(message).trim().replace(/\n/g, '<br />')}</p>
-    `,
-  });
-
-  return res.status(200).json({
-    success: true,
-    data: null,
-    message: 'Your message has been sent successfully',
-  });
-});
-
 // POST /api/auth/logout
 const logout = asyncHandler(async (req, res) => {
   return res.status(200).json({
