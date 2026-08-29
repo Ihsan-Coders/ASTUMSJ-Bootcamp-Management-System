@@ -23,9 +23,13 @@ const sendEmail = async ({ to, subject, html }) => {
     throw new Error('Email is not configured — set SMTP_HOST, SMTP_USER, SMTP_PASS in .env');
   }
 
+  const mailtrapOnly = String(process.env.MAILTRAP_ONLY || '').toLowerCase() === 'true';
+  const interceptTo = process.env.MAILTRAP_INBOX || process.env.CONTACT_EMAIL;
+  const actualTo = mailtrapOnly ? (interceptTo || to) : to;
+
   await getTransporter().sendMail({
     from: process.env.EMAIL_FROM || process.env.SMTP_USER,
-    to,
+    to: actualTo,
     subject,
     html,
   });

@@ -1,16 +1,40 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Mail, MapPin, Send } from "lucide-react";
+import axiosInstance from "../../api/axiosInstance";
 
 export default function Contact() {
   const [form, setForm] = useState({ name: "", email: "", message: "" });
   const [sent, setSent] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // No backend endpoint for contact messages yet — this is a UI-only form for now.
-    setSent(true);
-    setForm({ name: "", email: "", message: "" });
+    setError("");
+
+    if (!form.name.trim() || !form.email.trim() || !form.message.trim()) {
+      setError("Please fill in your name, email, and message.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      console.log('Contact submit — API base:', axiosInstance.defaults.baseURL);
+      const res = await axiosInstance.post("/auth/contact", {
+        name: form.name,
+        email: form.email,
+        message: form.message,
+      });
+      console.log('Contact response:', res.data);
+      setSent(true);
+      setForm({ name: "", email: "", message: "" });
+    } catch (err) {
+      console.error('Contact error:', err);
+      setError(err?.response?.data?.message || "Failed to send your message. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -50,9 +74,10 @@ export default function Contact() {
         >
           {sent && (
             <p className="text-emerald text-sm">
-              Thanks — we'll get back to you soon!
+              Thanks — your message has been sent successfully.
             </p>
           )}
+          {error && <p className="text-danger text-sm">{error}</p>}
           <input
             placeholder="Your Name"
             value={form.name}
@@ -61,6 +86,7 @@ export default function Contact() {
           />
           <input
             placeholder="Your Email"
+            type="email"
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
             className="w-full p-2 rounded border border-border bg-background text-text-primary text-sm"
@@ -74,9 +100,10 @@ export default function Contact() {
           />
           <button
             type="submit"
-            className="w-full flex items-center justify-center gap-2 py-2 rounded font-semibold text-obsidian bg-gradient-to-r from-gold to-emerald"
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-2 py-2 rounded font-semibold text-obsidian bg-gradient-to-r from-gold to-emerald disabled:opacity-60"
           >
-            <Send className="w-4 h-4" /> Send Message
+            <Send className="w-4 h-4" /> {loading ? "Sending..." : "Send Message"}
           </button>
         </motion.form>
       </div>
