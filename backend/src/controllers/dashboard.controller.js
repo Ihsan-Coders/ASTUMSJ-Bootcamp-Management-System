@@ -11,11 +11,6 @@ const {
   getVisibleAnnouncementsFilter,
 } = require("../services/announcement.service");
 
-/**
- * =========================
- * ADMIN DASHBOARD
- * =========================
- */
 const getAdminDashboard = asyncHandler(async (req, res) => {
   const [studentCount, mentorCount, batchCount, pendingCount] =
     await Promise.all([
@@ -84,34 +79,13 @@ const getAdminDashboard = asyncHandler(async (req, res) => {
   });
 });
 
-/**
- * =========================
- * MENTOR DASHBOARD
- * =========================
- */
 const getMentorDashboard = asyncHandler(async (req, res) => {
   const mentorId = req.user.id;
 
-  /**
-   * Get batches assigned to this mentor
-   */
-  /**
-   * Get batches assigned to this mentor
-   */
   const batches = await Batch.find({
     mentors: mentorId,
   });
 
-  /**
-   * Get ONLY students specifically assigned to this mentor.
-   *
-   * A student belongs to the mentor through:
-   *
-   * student.mentor = mentorId
-   *
-   * This prevents the dashboard from showing
-   * every student in the mentor's batch.
-   */
   const students = await User.find({
     role: "student",
     mentor: mentorId,
@@ -120,11 +94,6 @@ const getMentorDashboard = asyncHandler(async (req, res) => {
 
   const allStudentIds = students.map((student) => student._id);
 
-  /**
-   * =========================
-   * ATTENDANCE
-   * =========================
-   */
   const attendanceRecords =
     allStudentIds.length > 0
       ? await Attendance.find({
@@ -134,11 +103,6 @@ const getMentorDashboard = asyncHandler(async (req, res) => {
         })
       : [];
 
-  /**
-   * =========================
-   * STUDENT STATS
-   * =========================
-   */
   const studentStats = await Promise.all(
     students.map(async (student) => {
       const records = attendanceRecords.filter(
@@ -156,9 +120,6 @@ const getMentorDashboard = asyncHandler(async (req, res) => {
       const attendancePercentage =
         applicable > 0 ? Math.round((present / applicable) * 100) : 100;
 
-      /**
-       * Get student's progress records
-       */
       const progressRecords = await Progress.find({
         student: student._id,
       });
@@ -172,9 +133,6 @@ const getMentorDashboard = asyncHandler(async (req, res) => {
       const progressPercentage =
         totalTopics > 0 ? Math.round((completedTopics / totalTopics) * 100) : 0;
 
-      /**
-       * Determine whether student is at risk
-       */
       const riskReasons = [];
 
       if (attendancePercentage < 75) {
@@ -193,32 +151,18 @@ const getMentorDashboard = asyncHandler(async (req, res) => {
           name: student.name,
           email: student.email,
         },
-
         attendancePercentage,
-
         completedTopics,
-
         totalTopics,
-
         progressPercentage,
-
         isAtRisk,
-
         riskReasons,
       };
     }),
   );
 
-  /**
-   * Students who are at risk
-   */
   const atRiskStudents = studentStats.filter((student) => student.isAtRisk);
 
-  /**
-   * =========================
-   * OVERALL ATTENDANCE
-   * =========================
-   */
   const totalPresent = attendanceRecords.filter(
     (record) => record.status === "Present",
   ).length;
@@ -232,44 +176,23 @@ const getMentorDashboard = asyncHandler(async (req, res) => {
       ? Math.round((totalPresent / totalApplicable) * 100)
       : 0;
 
-  /**
-   * =========================
-   * TOTAL COMPLETED TOPICS
-   * =========================
-   */
   const totalCompletedTopics = studentStats.reduce(
     (total, student) => total + student.completedTopics,
     0,
   );
 
-  /**
-   * =========================
-   * MENTOR ASSIGNMENTS
-   * =========================
-   */
   const assignments = await Assignment.find({
     createdBy: mentorId,
   }).select("_id title maxScore deadline");
 
   const assignmentIds = assignments.map((assignment) => assignment._id);
 
-  /**
-   * =========================
-   * PENDING GRADING
-   * =========================
-   *
-   * Only submissions belonging to
-   * assignments created by this mentor
-   * and still having "Submitted" status
-   * are included.
-   */
   const pendingGradingQueue =
     assignmentIds.length > 0
       ? await Submission.find({
           assignment: {
             $in: assignmentIds,
           },
-
           status: "Submitted",
         })
           .populate("student", "name email")
@@ -280,61 +203,35 @@ const getMentorDashboard = asyncHandler(async (req, res) => {
           .limit(10)
       : [];
 
-  /**
-   * Number of pending submissions
-   */
   const pendingGradingCount =
     assignmentIds.length > 0
       ? await Submission.countDocuments({
           assignment: {
             $in: assignmentIds,
           },
-
           status: "Submitted",
         })
       : 0;
 
-  /**
-   * =========================
-   * RESPONSE
-   * =========================
-   */
   res.status(200).json({
     success: true,
-
     data: {
       assignedStudentCount: students.length,
-
       studentStats,
-
       atRiskStudents,
-
       pendingGradingCount,
-
       pendingGradingQueue,
-
       assignedBatchCount: batches.length,
-
       overallAttendancePercentage,
-
       totalCompletedTopics,
     },
-
     message: "Mentor dashboard data fetched",
   });
 });
 
-/**
- * =========================
- * STUDENT DASHBOARD
- * =========================
- */
 const getStudentDashboard = asyncHandler(async (req, res) => {
   const studentId = req.user.id;
 
-  /**
-   * Attendance
-   */
   const attendanceRecords = await Attendance.find({
     student: studentId,
   });
@@ -350,9 +247,6 @@ const getStudentDashboard = asyncHandler(async (req, res) => {
   const attendancePercentage =
     applicable > 0 ? Math.round((present / applicable) * 100) : 0;
 
-  /**
-   * Progress
-   */
   const progressRecords = await Progress.find({
     student: studentId,
   });
@@ -361,9 +255,6 @@ const getStudentDashboard = asyncHandler(async (req, res) => {
     (progress) => progress.status === "Completed",
   ).length;
 
-  /**
-   * Graded submissions
-   */
   const submissions = await Submission.find({
     student: studentId,
     status: "Graded",
@@ -382,11 +273,6 @@ const getStudentDashboard = asyncHandler(async (req, res) => {
         )
       : 0;
 
-  /**
-   * Recent announcements
-   * Only announcements this student is actually targeted by
-   * (All / Students / their specific batch), already published.
-   */
   const announcementFilter = await getVisibleAnnouncementsFilter(req.user);
 
   const recentAnnouncements = await Announcement.find(announcementFilter)
@@ -395,9 +281,6 @@ const getStudentDashboard = asyncHandler(async (req, res) => {
     })
     .limit(5);
 
-  /**
-   * Upcoming assignments
-   */
   const upcomingAssignments = await Assignment.find({
     deadline: {
       $gte: new Date(),
@@ -410,22 +293,68 @@ const getStudentDashboard = asyncHandler(async (req, res) => {
 
   res.status(200).json({
     success: true,
-
     data: {
       attendancePercentage,
-
       completedTopics,
-
       averageGrade,
-
       assignmentCount: submissions.length,
-
       recentAnnouncements,
-
       upcomingAssignments,
     },
-
     message: "Student dashboard data fetched",
+  });
+});
+
+const getPublicDashboard = asyncHandler(async (req, res) => {
+  const [activeBatchCount, totalAssignments, assignmentsCompleted] =
+    await Promise.all([
+      Batch.countDocuments({
+        isActive: true,
+      }),
+
+      Assignment.countDocuments(),
+
+      Submission.countDocuments({
+        status: "Graded",
+      }),
+    ]);
+
+  const attendanceRecords = await Attendance.find();
+
+  const presentCount = attendanceRecords.filter(
+    (record) => record.status === "Present",
+  ).length;
+
+  const applicableCount = attendanceRecords.filter((record) =>
+    ["Present", "Absent", "Late"].includes(record.status),
+  ).length;
+
+  const attendanceRate =
+    applicableCount > 0
+      ? Math.round((presentCount / applicableCount) * 100)
+      : 0;
+
+  res.status(200).json({
+    success: true,
+    data: {
+      activeBatchCount,
+      attendanceRate,
+      assignmentsCompleted,
+      totalAssignments,
+    },
+    message: "Public dashboard data fetched",
+  });
+});
+const getPublicMentors = asyncHandler(async (req, res) => {
+  const mentors = await User.find({
+    role: "mentor",
+    isActive: true,
+  }).select("name");
+
+  res.status(200).json({
+    success: true,
+    data: mentors,
+    message: "Public mentors fetched",
   });
 });
 
@@ -433,4 +362,6 @@ module.exports = {
   getAdminDashboard,
   getMentorDashboard,
   getStudentDashboard,
+  getPublicDashboard,
+  getPublicMentors,
 };
