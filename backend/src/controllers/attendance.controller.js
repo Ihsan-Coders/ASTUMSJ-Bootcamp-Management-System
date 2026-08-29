@@ -1,6 +1,7 @@
 const Attendance = require("../models/Attendance");
 const User = require("../models/User");
 const Batch = require("../models/Batch");
+const CalendarEvent = require("../models/CalendarEvent");
 
 const {
   calculateAttendancePercentage,
@@ -21,11 +22,19 @@ const normalizeDate = (date) => {
   return normalized;
 };
 
-/*
- * Mark attendance for one student.
- */
+// ======================================================
+// MARK ONE STUDENT
+// ======================================================
+
 const markAttendance = asyncHandler(async (req, res) => {
-  const { student, batch, date, session, status } = req.body;
+  const {
+    student,
+    batch,
+    session,
+    status,
+    calendarEvent,
+  } = req.body;
+
 
   if (req.user.role !== "admin") {
     return res.status(403).json({
@@ -35,7 +44,65 @@ const markAttendance = asyncHandler(async (req, res) => {
     });
   }
 
-  const normalizedDate = normalizeDate(date);
+  if (!calendarEvent) {
+    return res.status(400).json({
+      success: false,
+      data: null,
+      message:
+        "A calendar session is required to mark attendance",
+    });
+  }
+
+  if (!["start", "end"].includes(session)) {
+    return res.status(400).json({
+      success: false,
+      data: null,
+      message: "Session must be either start or end",
+    });
+  }
+
+  if (
+    !["Present", "Absent", "Late", "Excused"].includes(status)
+  ) {
+    return res.status(400).json({
+      success: false,
+      data: null,
+      message: "Invalid attendance status",
+    });
+  }
+
+  const event = await CalendarEvent.findById(calendarEvent);
+
+  if (!event) {
+    return res.status(404).json({
+      success: false,
+      data: null,
+      message: "Calendar session not found",
+    });
+  }
+
+  if (event.type !== "Session") {
+    return res.status(400).json({
+      success: false,
+      data: null,
+      message:
+        "Attendance can only be marked for a session event",
+    });
+  }
+
+  if (
+    event.batch &&
+    String(event.batch) !== String(batch)
+  ) {
+    return res.status(400).json({
+      success: false,
+      data: null,
+      message:
+        "Calendar session does not belong to this batch",
+    });
+  }
+
+    const normalizedDate = normalizeDate(event.date);
 
   if (!normalizedDate) {
     return res.status(400).json({
@@ -59,13 +126,17 @@ const markAttendance = asyncHandler(async (req, res) => {
     return res.status(400).json({
       success: false,
       data: null,
-      message: "Attendance cannot be marked for a completed batch",
+      message:
+        "Attendance cannot be marked for a completed batch",
     });
   }
 
   const studentRecord = await User.findById(student);
 
-  if (!studentRecord || studentRecord.role !== "student") {
+  if (
+    !studentRecord ||
+    studentRecord.role !== "student"
+  ) {
     return res.status(404).json({
       success: false,
       data: null,
@@ -73,27 +144,27 @@ const markAttendance = asyncHandler(async (req, res) => {
     });
   }
 
-  // Make sure the student belongs to this batch.
-const studentBelongsToBatch = batchRecord.students.some(
-  (studentId) => studentId.toString() === student.toString(),
-);
+  const studentBelongsToBatch =
+    batchRecord.students.some(
+      (studentId) =>
+        studentId.toString() === student.toString(),
+    );
 
+  if (!studentBelongsToBatch) {
+    return res.status(400).json({
+      success: false,
+      data: null,
+      message:
+        "Student does not belong to this batch",
+    });
+  }
 
-
-if (!studentBelongsToBatch) {
-  return res.status(400).json({
-    success: false,
-    data: null,
-    message: "Student does not belong to this batch",
-  });
-}
-
-  const existingRecord = await Attendance.findOne({
-    student,
-    batch,
-    date: normalizedDate,
-    session,
-  });
+  const existingRecord =
+    await Attendance.findOne({
+      student,
+      calendarEvent,
+      session,
+    });
 
   if (existingRecord) {
     return res.status(409).json({
@@ -106,6 +177,7 @@ if (!studentBelongsToBatch) {
   const record = await Attendance.create({
     student,
     batch,
+    calendarEvent,
     date: normalizedDate,
     session,
     status,
@@ -119,13 +191,18 @@ if (!studentBelongsToBatch) {
   });
 });
 
-/*
- * Mark attendance for an entire batch.
- *
- * This is what the Admin Attendance page will use.
- */
+// ======================================================
+// BULK ATTENDANCE
+// ======================================================
+
 const markBulkAttendance = asyncHandler(async (req, res) => {
-  const { batch, date, session, attendance } = req.body;
+  const {
+    batch,
+    session,
+    calendarEvent,
+    attendance,
+  } = req.body;
+
 
   if (req.user.role !== "admin") {
     return res.status(403).json({
@@ -135,21 +212,67 @@ const markBulkAttendance = asyncHandler(async (req, res) => {
     });
   }
 
-  if (!batch || !date || !session || !Array.isArray(attendance)) {
+    if (
+    !batch ||
+    !session ||
+    !calendarEvent ||
+    !Array.isArray(attendance)
+  ) {
     return res.status(400).json({
       success: false,
       data: null,
-      message: "Batch, date, session and attendance are required",
+      message:
+        "Batch, session, calendar event and attendance are required",
     });
   }
 
-  const normalizedDate = normalizeDate(date);
+  if (!["start", "end"].includes(session)) {
+    return res.status(400).json({
+      success: false,
+      data: null,
+      message: "Session must be either start or end",
+    });
+  }
+
+    const normalizedDate = normalizeDate(calendarRecord.date);
 
   if (!normalizedDate) {
     return res.status(400).json({
       success: false,
       data: null,
       message: "Invalid attendance date",
+    });
+  }
+
+  const calendarRecord =
+    await CalendarEvent.findById(calendarEvent);
+
+  if (!calendarRecord) {
+    return res.status(404).json({
+      success: false,
+      data: null,
+      message: "Calendar session not found",
+    });
+  }
+
+  if (calendarRecord.type !== "Session") {
+    return res.status(400).json({
+      success: false,
+      data: null,
+      message:
+        "Attendance can only be marked for a session event",
+    });
+  }
+
+  if (
+    calendarRecord.batch &&
+    String(calendarRecord.batch) !== String(batch)
+  ) {
+    return res.status(400).json({
+      success: false,
+      data: null,
+      message:
+        "Calendar session does not belong to this batch",
     });
   }
 
@@ -170,15 +293,8 @@ const markBulkAttendance = asyncHandler(async (req, res) => {
     return res.status(400).json({
       success: false,
       data: null,
-      message: "Attendance cannot be marked for a completed batch",
-    });
-  }
-
-  if (!["start", "end"].includes(session)) {
-    return res.status(400).json({
-      success: false,
-      data: null,
-      message: "Session must be either start or end",
+      message:
+        "Attendance cannot be marked for a completed batch",
     });
   }
 
@@ -186,25 +302,34 @@ const markBulkAttendance = asyncHandler(async (req, res) => {
     return res.status(400).json({
       success: false,
       data: null,
-      message: "No attendance records were provided",
+      message:
+        "No attendance records were provided",
     });
   }
 
   const batchStudentIds = new Set(
-    batchRecord.students.map((student) => student._id.toString()),
+    batchRecord.students.map((student) =>
+      student._id.toString(),
+    ),
   );
 
   for (const item of attendance) {
-    if (!item.student || !batchStudentIds.has(item.student.toString())) {
+    if (
+      !item.student ||
+      !batchStudentIds.has(item.student.toString())
+    ) {
       return res.status(400).json({
         success: false,
         data: null,
-        message: "One or more students do not belong to this batch",
+        message:
+          "One or more students do not belong to this batch",
       });
     }
 
     if (
-      !["Present", "Absent", "Late", "Excused"].includes(item.status)
+      !["Present", "Absent", "Late", "Excused"].includes(
+        item.status,
+      )
     ) {
       return res.status(400).json({
         success: false,
@@ -218,22 +343,25 @@ const markBulkAttendance = asyncHandler(async (req, res) => {
     updateOne: {
       filter: {
         student: item.student,
-        batch,
-        date: normalizedDate,
+        calendarEvent,
         session,
       },
+
       update: {
         $set: {
           status: item.status,
           markedBy: req.user.id,
-        },
-        $setOnInsert: {
-          student: item.student,
           batch,
           date: normalizedDate,
+        },
+
+        $setOnInsert: {
+          student: item.student,
+          calendarEvent,
           session,
         },
       },
+
       upsert: true,
     },
   }));
@@ -241,24 +369,28 @@ const markBulkAttendance = asyncHandler(async (req, res) => {
   await Attendance.bulkWrite(operations);
 
   const records = await Attendance.find({
-    batch,
-    date: normalizedDate,
+    calendarEvent,
     session,
   })
     .populate("student", "name email")
+    .populate("batch", "name")
+    .populate("calendarEvent", "title date type")
     .populate("markedBy", "name")
     .sort({ "student.name": 1 });
 
   res.status(200).json({
     success: true,
     data: records,
-    message: `${session === "start" ? "Start" : "End"} session attendance saved successfully`,
+    message: `${
+      session === "start" ? "Start" : "End"
+    } session attendance saved successfully`,
   });
 });
 
-/*
- * Update an existing attendance record.
- */
+// ======================================================
+// UPDATE
+// ======================================================
+
 const updateAttendance = asyncHandler(async (req, res) => {
   if (req.user.role !== "admin") {
     return res.status(403).json({
@@ -268,7 +400,9 @@ const updateAttendance = asyncHandler(async (req, res) => {
     });
   }
 
-  const record = await Attendance.findById(req.params.id);
+  const record = await Attendance.findById(
+    req.params.id,
+  );
 
   if (!record) {
     return res.status(404).json({
@@ -284,24 +418,38 @@ const updateAttendance = asyncHandler(async (req, res) => {
     return res.status(400).json({
       success: false,
       data: null,
-      message: "Attendance from a completed batch cannot be modified",
+      message:
+        "Attendance from a completed batch cannot be modified",
     });
   }
 
   const allowedUpdates = {};
 
   if (req.body.status !== undefined) {
+    if (
+      !["Present", "Absent", "Late", "Excused"].includes(
+        req.body.status,
+      )
+    ) {
+      return res.status(400).json({
+        success: false,
+        data: null,
+        message: "Invalid attendance status",
+      });
+    }
+
     allowedUpdates.status = req.body.status;
   }
 
-  const updatedRecord = await Attendance.findByIdAndUpdate(
-    req.params.id,
-    allowedUpdates,
-    {
-      new: true,
-      runValidators: true,
-    },
-  );
+  const updatedRecord =
+    await Attendance.findByIdAndUpdate(
+      req.params.id,
+      allowedUpdates,
+      {
+        new: true,
+        runValidators: true,
+      },
+    );
 
   res.status(200).json({
     success: true,
@@ -310,155 +458,191 @@ const updateAttendance = asyncHandler(async (req, res) => {
   });
 });
 
-/*
- * Get attendance history.
- */
-const getAttendanceHistory = asyncHandler(async (req, res) => {
-  const { studentId, batchId, date, session } = req.query;
+// ======================================================
+// HISTORY
+// ======================================================
 
-  const filter = {};
+const getAttendanceHistory = asyncHandler(
+  async (req, res) => {
+    const {
+      studentId,
+      batchId,
+      date,
+      session,
+      calendarEvent,
+    } = req.query;
 
-  if (req.user.role === "student") {
-    filter.student = req.user.id;
-  }
+    const filter = {};
 
-  if (req.user.role === "mentor") {
-    const mentorBatches = await Batch.find({
-      mentors: req.user.id,
-    }).select("_id");
+    if (req.user.role === "student") {
+      filter.student = req.user.id;
+    }
 
-    const mentorBatchIds = mentorBatches.map((batch) => batch._id);
+    if (req.user.role === "mentor") {
+      const mentorBatches = await Batch.find({
+        mentors: req.user.id,
+      }).select("_id");
 
-    if (batchId) {
-      const allowedBatch = mentorBatchIds.some(
-        (id) => id.toString() === batchId,
+      const mentorBatchIds = mentorBatches.map(
+        (batch) => batch._id,
       );
 
-      if (!allowedBatch) {
-        return res.status(403).json({
+      if (batchId) {
+        const allowedBatch = mentorBatchIds.some(
+          (id) => id.toString() === batchId,
+        );
+
+        if (!allowedBatch) {
+          return res.status(403).json({
+            success: false,
+            data: null,
+            message:
+              "You are not assigned to this batch",
+          });
+        }
+
+        filter.batch = batchId;
+      } else {
+        filter.batch = {
+          $in: mentorBatchIds,
+        };
+      }
+
+      if (studentId) {
+        const student = await User.findOne({
+          _id: studentId,
+          role: "student",
+          batch: { $in: mentorBatchIds },
+        });
+
+        if (!student) {
+          return res.status(403).json({
+            success: false,
+            data: null,
+            message:
+              "You cannot view this student's attendance",
+          });
+        }
+
+        filter.student = studentId;
+      }
+    }
+
+    if (req.user.role === "admin") {
+      if (studentId) {
+        filter.student = studentId;
+      }
+
+      if (batchId) {
+        filter.batch = batchId;
+      }
+    }
+
+    if (calendarEvent) {
+      filter.calendarEvent = calendarEvent;
+    }
+
+    if (date) {
+      const normalizedDate = normalizeDate(calendarRecord.date);
+
+      if (!normalizedDate) {
+        return res.status(400).json({
           success: false,
           data: null,
-          message: "You are not assigned to this batch",
+          message: "Invalid date",
         });
       }
 
-      filter.batch = batchId;
-    } else {
-      filter.batch = { $in: mentorBatchIds };
+      const nextDate = new Date(normalizedDate);
+      nextDate.setDate(nextDate.getDate() + 1);
+
+      filter.date = {
+        $gte: normalizedDate,
+        $lt: nextDate,
+      };
     }
 
-    if (studentId) {
-      const student = await User.findOne({
-        _id: studentId,
-        role: "student",
-        batch: { $in: mentorBatchIds },
+    if (session) {
+      filter.session = session;
+    }
+
+    const records = await Attendance.find(filter)
+      .populate("student", "name email")
+      .populate("batch", "name")
+      .populate(
+        "calendarEvent",
+        "title date type batch",
+      )
+      .populate("markedBy", "name")
+      .sort({
+        date: -1,
+        session: 1,
       });
 
-      if (!student) {
-        return res.status(403).json({
-          success: false,
-          data: null,
-          message: "You cannot view this student's attendance",
-        });
-      }
+    const percentage =
+      calculateAttendancePercentage(records);
 
-      filter.student = studentId;
+    res.status(200).json({
+      success: true,
+      data: {
+        records,
+        percentage,
+        isAtRisk: isAtRisk(percentage),
+      },
+      message: "Attendance fetched",
+    });
+  },
+);
+
+// ======================================================
+// DELETE
+// ======================================================
+
+const deleteAttendance = asyncHandler(
+  async (req, res) => {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        data: null,
+        message:
+          "Only admins can delete attendance",
+      });
     }
-  }
 
-  if (req.user.role === "admin") {
-    if (studentId) {
-      filter.student = studentId;
+    const record = await Attendance.findById(
+      req.params.id,
+    );
+
+    if (!record) {
+      return res.status(404).json({
+        success: false,
+        data: null,
+        message: "Attendance record not found",
+      });
     }
 
-    if (batchId) {
-      filter.batch = batchId;
-    }
-  }
+    const batch = await Batch.findById(record.batch);
 
-  if (date) {
-    const normalizedDate = normalizeDate(date);
-
-    if (!normalizedDate) {
+    if (!batch || !batch.isActive) {
       return res.status(400).json({
         success: false,
         data: null,
-        message: "Invalid date",
+        message:
+          "Attendance from a completed batch cannot be deleted",
       });
     }
 
-    const nextDate = new Date(normalizedDate);
-    nextDate.setDate(nextDate.getDate() + 1);
+    await Attendance.findByIdAndDelete(
+      req.params.id,
+    );
 
-    filter.date = {
-      $gte: normalizedDate,
-      $lt: nextDate,
-    };
-  }
-
-  if (session) {
-    filter.session = session;
-  }
-
-  const records = await Attendance.find(filter)
-    .populate("student", "name email")
-    .populate("batch", "name")
-    .populate("markedBy", "name")
-    .sort({ date: -1, session: 1 });
-
-  const percentage = calculateAttendancePercentage(records);
-
-  res.status(200).json({
-    success: true,
-    data: {
-      records,
-      percentage,
-      isAtRisk: isAtRisk(percentage),
-    },
-    message: "Attendance fetched",
-  });
-});
-
-/*
- * Delete attendance.
- */
-const deleteAttendance = asyncHandler(async (req, res) => {
-  if (req.user.role !== "admin") {
-    return res.status(403).json({
-      success: false,
-      data: null,
-      message: "Only admins can delete attendance",
+    res.status(200).json({
+      success: true,
+      data: record,
+      message: "Attendance deleted successfully",
     });
-  }
-
-  const record = await Attendance.findById(req.params.id);
-
-  if (!record) {
-    return res.status(404).json({
-      success: false,
-      data: null,
-      message: "Attendance record not found",
-    });
-  }
-
-  const batch = await Batch.findById(record.batch);
-
-  if (!batch || !batch.isActive) {
-    return res.status(400).json({
-      success: false,
-      data: null,
-      message: "Attendance from a completed batch cannot be deleted",
-    });
-  }
-
-  await Attendance.findByIdAndDelete(req.params.id);
-
-  res.status(200).json({
-    success: true,
-    data: record,
-    message: "Attendance deleted successfully",
-  });
-});
+  },
+);
 
 module.exports = {
   markAttendance,

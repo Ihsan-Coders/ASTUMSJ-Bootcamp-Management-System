@@ -42,10 +42,14 @@ const getEvents = asyncHandler(async (req, res) => {
     filter = { batch: batchId };
   }
 
-  const events = await CalendarEvent.find(filter)
+    const events = await CalendarEvent.find(filter)
     .populate("batch", "name")
     .populate("createdBy", "name email")
     .sort({ date: 1 });
+
+  console.log("CALENDAR GET EVENTS FILTER:", JSON.stringify(filter, null, 2));
+  console.log("CALENDAR GET EVENTS COUNT:", events.length);
+  events.forEach(e => console.log(`EVENT: ${e.title}, TYPE: ${e.type}, BATCH: ${e.batch?._id}`));
 
   res
     .status(200)

@@ -14,6 +14,13 @@ const attendanceSchema = new mongoose.Schema(
       required: true,
     },
 
+    // The exact scheduled class/session this attendance belongs to.
+    calendarEvent: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "CalendarEvent",
+      required: true,
+    },
+
     date: {
       type: Date,
       required: true,
@@ -40,10 +47,14 @@ const attendanceSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-// A student can only have one attendance record
-// for each checkpoint of a particular day.
+// One student can have only one start/end attendance
+// record for a specific scheduled calendar session.
 attendanceSchema.index(
-  { student: 1, batch: 1, date: 1, session: 1 },
+  {
+    student: 1,
+    calendarEvent: 1,
+    session: 1,
+  },
   { unique: true },
 );
 
