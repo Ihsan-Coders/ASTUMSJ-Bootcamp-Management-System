@@ -17,6 +17,13 @@ const ACTIVE_STATUSES = ['Pending Review', 'Interview', 'Interview Completed'];
 const submitApplication = asyncHandler(async (req, res) => {
   const { email } = req.body;
 
+  // Enforce global registration status.
+  const Setting = require('../models/Setting');
+  const setting = (await Setting.findOne()) || { registrationOpen: true };
+  if (!setting.registrationOpen) {
+    return res.status(403).json({ success: false, data: null, message: 'Registration is currently closed' });
+  }
+
   const existing = await Application.findOne({
     email,
     status: { $in: ACTIVE_STATUSES },
