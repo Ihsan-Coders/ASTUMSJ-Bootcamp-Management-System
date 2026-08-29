@@ -25,6 +25,7 @@ import NotificationBell from "../notifications/NotificationBell";
 import { useAuth } from "../../context/AuthContext";
 import imageLogo from "../../assets/astu-msj-logo.jpg";
 
+
 const PUBLIC_LINKS = [
   { label: "Home", href: "#home" },
   { label: "About", href: "#about" },
