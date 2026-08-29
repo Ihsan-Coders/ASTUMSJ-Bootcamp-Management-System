@@ -1,7 +1,6 @@
 const Batch = require("../models/Batch");
 const User = require("../models/User");
 const asyncHandler = require("../utils/asyncHandler");
-
 const allowedBatchFields = [
   "name",
   "startDate",
@@ -295,9 +294,12 @@ const setAcceptingBatch = asyncHandler(async (req, res) => {
     });
   }
 
-  await Batch.updateMany({}, {
-    $set: { isAcceptingApplicants: false },
-  });
+  await Batch.updateMany(
+    {},
+    {
+      $set: { isAcceptingApplicants: false },
+    },
+  );
 
   batch.isAcceptingApplicants = true;
 
