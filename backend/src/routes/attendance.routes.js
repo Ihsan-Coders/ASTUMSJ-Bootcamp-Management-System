@@ -7,6 +7,7 @@ const authorize = require("../middleware/role.middleware");
 
 const {
   markAttendance,
+  markBulkAttendance,
   updateAttendance,
   getAttendanceHistory,
   deleteAttendance,
@@ -14,12 +15,31 @@ const {
 
 router.use(protect);
 
-router.post("/", authorize("mentor"), markAttendance);
+// Admin attendance management
+router.post("/", authorize("admin"), markAttendance);
 
-router.put("/:id", authorize("mentor"), updateAttendance);
+router.post(
+  "/bulk",
+  authorize("admin"),
+  markBulkAttendance,
+);
 
-router.get("/", authorize("admin", "mentor", "student"), getAttendanceHistory);
+router.put(
+  "/:id",
+  authorize("admin"),
+  updateAttendance,
+);
 
-router.delete("/:id", authorize("mentor"), deleteAttendance);
+router.delete(
+  "/:id",
+  authorize("admin"),
+  deleteAttendance,
+);
+// Admin / Mentor / Student attendance viewing
+router.get(
+  "/",
+  authorize("admin", "mentor", "student"),
+  getAttendanceHistory,
+);
 
 module.exports = router;

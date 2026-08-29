@@ -43,7 +43,8 @@ const userSchema = new mongoose.Schema(
     codeforcesHandle: {
       type: String,
       trim: true,
-      default: ""},
+      default: ""
+    },
     passwordResetToken: {
       type: String,
       select: false,

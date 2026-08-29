@@ -31,6 +31,7 @@ export default function ApplicationTable({ refreshKey }) {
   const [assigning, setAssigning] = useState(null);
   const [actionError, setActionError] = useState("");
   const [actioningId, setActioningId] = useState(null);
+  const [credentials, setCredentials] = useState(null);
 
   const fetchApplications = () => {
     const params = {};
@@ -92,7 +93,10 @@ export default function ApplicationTable({ refreshKey }) {
     setActionError("");
     setActioningId(application._id);
     try {
-      await finalDecision(application._id, decision);
+      const res = await finalDecision(application._id, decision);
+      if (decision === "pass" && res.data.data?.tempPassword) {
+        setCredentials(res.data.data);
+      }
       fetchApplications();
     } catch (err) {
       setActionError(err?.response?.data?.message || `Failed to ${verb} applicant`);
@@ -353,6 +357,39 @@ export default function ApplicationTable({ refreshKey }) {
         onClose={() => setAssigning(null)}
         onAssigned={fetchApplications}
       />
+
+      <Modal
+        isOpen={!!credentials}
+        onClose={() => setCredentials(null)}
+        title="Student Account Created"
+      >
+        {credentials && (
+          <div className="space-y-2 text-sm">
+            <p className="text-danger">
+              Email sending isn't configured yet — share these credentials
+              with the student manually.
+            </p>
+            <p>
+              <span className="text-text-secondary">Name:</span>{" "}
+              {credentials.student.name}
+            </p>
+            <p>
+              <span className="text-text-secondary">Email:</span>{" "}
+              {credentials.student.email}
+            </p>
+            <p>
+              <span className="text-text-secondary">Batch:</span>{" "}
+              {credentials.student.batch}
+            </p>
+            <p>
+              <span className="text-text-secondary">Temporary password:</span>{" "}
+              <span className="font-mono text-gold">
+                {credentials.tempPassword}
+              </span>
+            </p>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

@@ -16,7 +16,8 @@ import ReportsPage from "../pages/admin/ReportsPage";
 import ManageAnnouncements from "../pages/admin/ManageAnnouncements";
 import ManageApplications from "../pages/admin/ManageApplications";
 import ManageAssignments from "../pages/admin/ManageAssignments";
-import MentorDashboard from "../pages/mentor/MentorDashboard";
+import MentorDashboard from "../pages/mentor/MentorDashboard"
+import AdminAttendancePage from "../pages/admin/AdminAttendancePage";;
 import ManageAlumni from "../pages/admin/ManageAlumni";
 import MentorAttendancePage from "../pages/mentor/MentorAttendancePage"; // real mentor mark-attendance page
 // import StudentAttendancePage from '../pages/mentor/AttendancePage'; // misplaced file, actually shows a student's own attendance
@@ -27,7 +28,7 @@ import StudentDashboard from "../pages/student/StudentDashboard";
 import MyAttendance from "../pages/student/MyAttendance";
 import MyProgress from "../pages/student/MyProgress";
 import MyTimeline from "../pages/student/MyTimeline";
-import Announcements from "../pages/student/Announcements"
+import Announcements from "../pages/student/Announcements";
 import MyAssignments from "../pages/student/MyAssignments";
 import Profile from "../pages/student/Profile";
 
@@ -35,6 +36,15 @@ import ResourceLibraryPage from "../pages/ResourceLibraryPage";
 import AlumniPage from "../pages/AlumniPage";
 import LeaderboardPage from "../pages/LeaderboardPage";
 import CalendarPage from "../pages/CalendarPage";
+
+import ManageContests from "../pages/admin/ManageContests";
+import ContestDetailPage from "../pages/admin/ContestDetailPage";
+import StudentContests from "../pages/student/Contests";
+import MentorContests from "../pages/mentor/Contests";
+
+import ContestLeaderboardPage from "../pages/admin/ContestLeaderboardPage";
+
+import DSAActivity from "../pages/student/DSAActivity";
 
 export default function AppRoutes() {
   return (
@@ -47,7 +57,48 @@ export default function AppRoutes() {
       <Route path="/resources" element={<ResourceLibraryPage />} />
       <Route path="/alumni" element={<AlumniPage />} />
       <Route path="/leaderboard" element={<LeaderboardPage />} />
+      <Route
+        path="/admin/contests"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <ManageContests />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/contests/:id"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <ContestDetailPage />
+          </ProtectedRoute>
+        }
+      />
 
+      <Route
+        path="/admin/contests/:id/leaderboard"
+        element={
+          <ProtectedRoute allowedRoles={["admin", "mentor", "student"]}>
+            <ContestLeaderboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/mentor/contests/:id/leaderboard"
+        element={
+          <ProtectedRoute allowedRoles={["mentor"]}>
+            <ContestLeaderboardPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/student/contests/:id/leaderboard"
+        element={
+          <ProtectedRoute allowedRoles={["student"]}>
+            <ContestLeaderboardPage />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/admin"
         element={
@@ -88,6 +139,15 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/admin/attendance"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <AdminAttendancePage />
+          </ProtectedRoute>
+        }
+      />
+      
       <Route
         path="/admin/reports"
         element={
@@ -135,7 +195,7 @@ export default function AppRoutes() {
             <LeaderboardPage />
           </ProtectedRoute>
         }
-      /> 
+      />
       <Route
         path="/admin/profile"
         element={
@@ -143,7 +203,7 @@ export default function AppRoutes() {
             <Profile />
           </ProtectedRoute>
         }
-      /> 
+      />
 
       <Route
         path="/mentor"
@@ -186,6 +246,14 @@ export default function AppRoutes() {
         }
       />
       <Route
+        path="/mentor/contests"
+        element={
+          <ProtectedRoute allowedRoles={["mentor"]}>
+            <MentorContests />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/mentor/resources"
         element={
           <ProtectedRoute allowedRoles={["mentor"]}>
@@ -193,7 +261,7 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       />
-       <Route
+      <Route
         path="/mentor/calendar"
         element={
           <ProtectedRoute allowedRoles={["mentor"]}>
@@ -208,7 +276,7 @@ export default function AppRoutes() {
             <LeaderboardPage />
           </ProtectedRoute>
         }
-      /> 
+      />
       <Route
         path="/mentor/profile"
         element={
@@ -216,13 +284,21 @@ export default function AppRoutes() {
             <Profile />
           </ProtectedRoute>
         }
-      /> 
+      />
 
       <Route
         path="/student"
         element={
           <ProtectedRoute allowedRoles={["student"]}>
             <StudentDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/dsa-activity"
+        element={
+          <ProtectedRoute allowedRoles={["student"]}>
+            <DSAActivity />
           </ProtectedRoute>
         }
       />
@@ -234,7 +310,7 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       />
-       <Route
+      <Route
         path="/student/myassignments"
         element={
           <ProtectedRoute allowedRoles={["student"]}>
@@ -242,7 +318,14 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       />
-
+      <Route
+        path="/student/contests"
+        element={
+          <ProtectedRoute allowedRoles={["student"]}>
+            <StudentContests />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/student/progress"
         element={
@@ -252,11 +335,19 @@ export default function AppRoutes() {
         }
       />
       <Route
+        path="/student/dsa-activity"
+        element={
+          <ProtectedRoute allowedRoles={["student"]}>
+            <DSAActivity />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/student/resources"
         element={
           <ProtectedRoute allowedRoles={["student"]}>
-            <ResourceLibraryPage/>
-            </ProtectedRoute >
+            <ResourceLibraryPage />
+          </ProtectedRoute>
         }
       />
       <Route
@@ -290,7 +381,7 @@ export default function AppRoutes() {
             <LeaderboardPage />
           </ProtectedRoute>
         }
-      /> 
+      />
       <Route
         path="/student/profile"
         element={
@@ -298,7 +389,7 @@ export default function AppRoutes() {
             <Profile />
           </ProtectedRoute>
         }
-      /> 
+      />
 
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
