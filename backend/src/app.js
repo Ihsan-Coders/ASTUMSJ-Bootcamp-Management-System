@@ -9,6 +9,7 @@ const routes = require('./routes');
 const notFound = require('./middleware/notFound.middleware');
 const errorHandler = require('./middleware/errorHandler.middleware');
 
+app.set('trust proxy', 1);
 // Security middleware
 app.use(helmet());
 app.use(cors());
