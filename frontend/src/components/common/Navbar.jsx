@@ -231,7 +231,7 @@ function Logo() {
                    overflow-hidden"
       >
         <img
-          src="../../assets/astu-msj-logo.jpg"
+          src="../../../src/assets/astu-msj-logo.jpg"
           alt="ASTU MSJ Bootcamp Logo"
           className="w-full h-full object-cover scale-105 rounded-full"
           onError={(e) => {
