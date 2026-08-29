@@ -7,118 +7,144 @@ const generateToken = require('../utils/generateToken');
 const asyncHandler = require('../utils/asyncHandler');
 const { generateResetToken, hashResetToken } = require('../utils/resetToken');
 const { sendEmail } = require('../utils/email');
-
+const {
+  normalizeEmail,
+  buildStudentRegistrationPayload,
+  createActivationToken,
+  hashActivationToken,
+} = require('../utils/studentRegistration');
 
 // POST /api/auth/register
 const register = asyncHandler(async (req, res) => {
-    const { name, email, password } = req.body;
+  const { name, email, password } = req.body;
+  const normalizedEmail = normalizeEmail(email);
 
-
-    const normalizedEmail = email.toLowerCase().trim();
-
-    const existingUser = await User.findOne({
-      email: normalizedEmail,
+  const existingUser = await User.findOne({ email: normalizedEmail });
+  if (existingUser) {
+    return res.status(409).json({
+      success: false,
+      data: null,
+      message: 'Email already registered',
     });
+  }
 
-    if (existingUser) {
-      return res.status(409).json({
-        success: false,
-        data: null,
-        message: 'Email already registered',
-      });
-    }
+  const hashedPassword = await hashPassword(password);
+  const safePayload = buildStudentRegistrationPayload({
+    name,
+    email: normalizedEmail,
+    password: hashedPassword,
+  });
 
-    const hashedPassword = await hashPassword(password);
+  const user = await User.create({
+    ...safePayload,
+    password: hashedPassword,
+  });
 
-    // SECURITY:
-    // Public registration ALWAYS creates student accounts.
-    const user = await User.create({
-      name: name.trim(),
-      email: normalizedEmail,
-      password: hashedPassword,
-      role: 'student',
-    });
-
-    const token = generateToken(user._id);
-
-    return res.status(201).json({
-      success: true,
-      data: {
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-        },
-        token,
+  return res.status(201).json({
+    success: true,
+    data: {
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        applicationStatus: user.applicationStatus,
+        isActive: user.isActive,
       },
-      message: 'Registered successfully',
-    });
-})
+    },
+    message: 'Registration submitted successfully. Your application is pending review.',
+  });
+});
 
 // POST /api/auth/login
 const login = asyncHandler(async (req, res) => {
-    const { email, password } = req.body;
+  const { email, password } = req.body;
+  const normalizedEmail = normalizeEmail(email);
 
-    
+  const user = await User.findOne({ email: normalizedEmail }).select('+password');
 
-    const normalizedEmail = email.toLowerCase().trim();
-
-    const user = await User.findOne({
-      email: normalizedEmail,
-    }).select('+password');
-
-    
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        data: null,
-        message: 'Invalid email or password',
-      });
-    }
-
-    if (!user.isActive) {
-      return res.status(403).json({
-        success: false,
-        data: null,
-        message: 'Account is disabled',
-      });
-    }
-
-    const isPasswordCorrect = await comparePassword(
-      password,
-      user.password
-    );
-
-    if (!isPasswordCorrect) {
-      return res.status(401).json({
-        success: false,
-        data: null,
-        message: 'Invalid email or password',
-      });
-    }
-
-    const token = generateToken(user._id);
-
-    return res.status(200).json({
-      success: true,
-      data: {
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-        },
-        token,
-      },
-      message: 'Logged in successfully',
+  if (!user) {
+    return res.status(401).json({
+      success: false,
+      data: null,
+      message: 'Invalid email or password',
     });
-})
+  }
+
+  if (!user.isActive) {
+    return res.status(403).json({
+      success: false,
+      data: null,
+      message: 'Account is not active.',
+    });
+  }
+
+  const isPasswordCorrect = await comparePassword(password, user.password);
+  if (!isPasswordCorrect) {
+    return res.status(401).json({
+      success: false,
+      data: null,
+      message: 'Invalid email or password',
+    });
+  }
+
+  const token = generateToken(user._id);
+
+  return res.status(200).json({
+    success: true,
+    data: {
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+      token,
+    },
+    message: 'Logged in successfully',
+  });
+});
+
+const activateAccount = asyncHandler(async (req, res) => {
+  const { token, password } = req.body;
+  const hashedToken = hashActivationToken(token);
+
+  const user = await User.findOne({
+    activationTokenHash: hashedToken,
+    activationTokenUsed: false,
+    activationTokenExpires: { $gt: new Date() },
+  }).select('+activationTokenHash +activationTokenExpires +activationTokenUsed +password');
+
+  if (!user) {
+    return res.status(400).json({
+      success: false,
+      data: null,
+      message: 'Invalid or expired activation token',
+    });
+  }
+
+  const hashedPassword = await hashPassword(password);
+
+  user.password = hashedPassword;
+  user.isActive = true;
+  user.applicationStatus = 'activated';
+  user.activationTokenHash = undefined;
+  user.activationTokenExpires = undefined;
+  user.activationTokenUsed = true;
+
+  await user.save({ validateBeforeSave: false });
+
+  return res.status(200).json({
+    success: true,
+    data: null,
+    message: 'Account activated successfully',
+  });
+});
 
 // POST /api/auth/forgot-password
 const forgotPassword = asyncHandler(async (req, res) => {
   const { email } = req.body;
-  const normalizedEmail = email.toLowerCase().trim();
+  const normalizedEmail = normalizeEmail(email);
 
   const user = await User.findOne({ email: normalizedEmail });
 
@@ -136,8 +162,6 @@ const forgotPassword = asyncHandler(async (req, res) => {
 
   user.passwordResetToken = hashedToken;
   user.passwordResetExpires = expiresAt;
-  // Skip full schema validation — we're only touching the reset fields,
-  // not re-validating name/email/password on an already-valid document.
   await user.save({ validateBeforeSave: false });
 
   const resetUrl = `${process.env.CLIENT_URL}/reset-password/${rawToken}`;
@@ -212,12 +236,12 @@ const logout = asyncHandler(async (req, res) => {
     data: null,
     message: 'Logged out successfully',
   });
-})
-
+});
 
 module.exports = {
   register,
   login,
+  activateAccount,
   logout,
   forgotPassword,
   resetPassword,

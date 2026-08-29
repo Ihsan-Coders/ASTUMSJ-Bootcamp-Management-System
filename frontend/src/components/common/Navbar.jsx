@@ -23,6 +23,7 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import DarkModeToggle from "./DarkModeToggle";
 import NotificationBell from "../notifications/NotificationBell";
 import { useAuth } from "../../context/AuthContext";
+import imageLogo from "../../assets/astu-msj-logo.jpg";
 
 const PUBLIC_LINKS = [
   { label: "Home", href: "#home" },
@@ -231,7 +232,7 @@ function Logo() {
                    overflow-hidden"
       >
         <img
-          src="/src/assets/astu-msj-logo.jpg"
+          src={imageLogo}
           alt="ASTU MSJ Bootcamp Logo"
           className="w-full h-full object-cover scale-105 rounded-full"
           onError={(e) => {

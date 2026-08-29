@@ -4,6 +4,7 @@ export const getMe = () => axiosInstance.get('/users/me');
 export const updateMe = (data) => axiosInstance.put('/users/me', data);
 
 export const getUsers = (params) => axiosInstance.get('/users', { params });
+export const getUserById = (id) => axiosInstance.get(`/users/${id}`);
 export const createUser = (data) => axiosInstance.post('/users', data);
 export const createMentor = (data) => axiosInstance.post('/users/mentors', data);
 export const createAdmin = (data) => axiosInstance.post('/users/admins', data);
@@ -11,4 +12,8 @@ export const updateUser = (id, data) => axiosInstance.put(`/users/${id}`, data);
 export const deleteUser = (id) => axiosInstance.delete(`/users/${id}`);
 export const getPendingUsers = () => axiosInstance.get('/users/pending');
 export const approveUser = (id) => axiosInstance.put(`/users/${id}/approve`);
+export const rejectUser = (id) => axiosInstance.put(`/users/${id}/reject`);
+export const scheduleInterview = (id, data) => axiosInstance.put(`/users/${id}/schedule-interview`, data);
+export const recordInterviewResult = (id, data) => axiosInstance.put(`/users/${id}/interview-result`, data);
+export const finalApproveUser = (id) => axiosInstance.put(`/users/${id}/final-approve`);
 export const changePassword = (data) =>axiosInstance.put('/users/me/password', data);

@@ -94,8 +94,11 @@ export default function ApplicationTable({ refreshKey }) {
     setActioningId(application._id);
     try {
       const res = await finalDecision(application._id, decision);
-      if (decision === "pass" && res.data.data?.tempPassword) {
-        setCredentials(res.data.data);
+      if (decision === "pass") {
+        setCredentials({
+          student: res.data.data?.student || { name: application.name, email: application.email },
+          message: res.data.message || "Activation email sent successfully",
+        });
       }
       fetchApplications();
     } catch (err) {
@@ -361,14 +364,11 @@ export default function ApplicationTable({ refreshKey }) {
       <Modal
         isOpen={!!credentials}
         onClose={() => setCredentials(null)}
-        title="Student Account Created"
+        title="Email Sent Successfully"
       >
         {credentials && (
           <div className="space-y-2 text-sm">
-            <p className="text-danger">
-              Email sending isn't configured yet — share these credentials
-              with the student manually.
-            </p>
+            <p className="text-emerald font-medium">{credentials.message}</p>
             <p>
               <span className="text-text-secondary">Name:</span>{" "}
               {credentials.student.name}
@@ -379,13 +379,7 @@ export default function ApplicationTable({ refreshKey }) {
             </p>
             <p>
               <span className="text-text-secondary">Batch:</span>{" "}
-              {credentials.student.batch}
-            </p>
-            <p>
-              <span className="text-text-secondary">Temporary password:</span>{" "}
-              <span className="font-mono text-gold">
-                {credentials.tempPassword}
-              </span>
+              {credentials.student.batch || "Assigned batch"}
             </p>
           </div>
         )}
