@@ -7,7 +7,9 @@ const User = require("../models/User");
 const Batch = require("../models/Batch");
 const Assignment = require("../models/Assignment");
 const asyncHandler = require("../utils/asyncHandler");
-const { getVisibleAnnouncementsFilter } = require("../services/announcement.service");
+const {
+  getVisibleAnnouncementsFilter,
+} = require("../services/announcement.service");
 
 /**
  * =========================
@@ -93,26 +95,30 @@ const getMentorDashboard = asyncHandler(async (req, res) => {
   /**
    * Get batches assigned to this mentor
    */
+  /**
+   * Get batches assigned to this mentor
+   */
   const batches = await Batch.find({
     mentors: mentorId,
-  }).populate("students", "name email");
-
-  /**
-   * Collect unique students from all mentor batches
-   */
-  const studentsMap = new Map();
-
-  batches.forEach((batch) => {
-    batch.students.forEach((student) => {
-      studentsMap.set(String(student._id), student);
-    });
   });
 
-  const students = Array.from(studentsMap.values());
+  /**
+   * Get ONLY students specifically assigned to this mentor.
+   *
+   * A student belongs to the mentor through:
+   *
+   * student.mentor = mentorId
+   *
+   * This prevents the dashboard from showing
+   * every student in the mentor's batch.
+   */
+  const students = await User.find({
+    role: "student",
+    mentor: mentorId,
+    isActive: true,
+  }).select("name email");
 
-  const allStudentIds = students.map(
-    (student) => student._id,
-  );
+  const allStudentIds = students.map((student) => student._id);
 
   /**
    * =========================
@@ -136,9 +142,7 @@ const getMentorDashboard = asyncHandler(async (req, res) => {
   const studentStats = await Promise.all(
     students.map(async (student) => {
       const records = attendanceRecords.filter(
-        (record) =>
-          String(record.student) ===
-          String(student._id),
+        (record) => String(record.student) === String(student._id),
       );
 
       const present = records.filter(
@@ -146,17 +150,11 @@ const getMentorDashboard = asyncHandler(async (req, res) => {
       ).length;
 
       const applicable = records.filter((record) =>
-        ["Present", "Absent", "Late"].includes(
-          record.status,
-        ),
+        ["Present", "Absent", "Late"].includes(record.status),
       ).length;
 
       const attendancePercentage =
-        applicable > 0
-          ? Math.round(
-              (present / applicable) * 100,
-            )
-          : 100;
+        applicable > 0 ? Math.round((present / applicable) * 100) : 100;
 
       /**
        * Get student's progress records
@@ -165,21 +163,14 @@ const getMentorDashboard = asyncHandler(async (req, res) => {
         student: student._id,
       });
 
-      const completedTopics =
-        progressRecords.filter(
-          (progress) =>
-            progress.status === "Completed",
-        ).length;
+      const completedTopics = progressRecords.filter(
+        (progress) => progress.status === "Completed",
+      ).length;
 
       const totalTopics = progressRecords.length;
 
       const progressPercentage =
-        totalTopics > 0
-          ? Math.round(
-              (completedTopics / totalTopics) *
-                100,
-            )
-          : 0;
+        totalTopics > 0 ? Math.round((completedTopics / totalTopics) * 100) : 0;
 
       /**
        * Determine whether student is at risk
@@ -190,17 +181,11 @@ const getMentorDashboard = asyncHandler(async (req, res) => {
         riskReasons.push("Low attendance");
       }
 
-      if (
-        totalTopics > 0 &&
-        completedTopics === 0
-      ) {
-        riskReasons.push(
-          "No completed topics",
-        );
+      if (totalTopics > 0 && completedTopics === 0) {
+        riskReasons.push("No completed topics");
       }
 
-      const isAtRisk =
-        riskReasons.length > 0;
+      const isAtRisk = riskReasons.length > 0;
 
       return {
         student: {
@@ -227,36 +212,24 @@ const getMentorDashboard = asyncHandler(async (req, res) => {
   /**
    * Students who are at risk
    */
-  const atRiskStudents =
-    studentStats.filter(
-      (student) => student.isAtRisk,
-    );
+  const atRiskStudents = studentStats.filter((student) => student.isAtRisk);
 
   /**
    * =========================
    * OVERALL ATTENDANCE
    * =========================
    */
-  const totalPresent =
-    attendanceRecords.filter(
-      (record) =>
-        record.status === "Present",
-    ).length;
+  const totalPresent = attendanceRecords.filter(
+    (record) => record.status === "Present",
+  ).length;
 
-  const totalApplicable =
-    attendanceRecords.filter((record) =>
-      ["Present", "Absent", "Late"].includes(
-        record.status,
-      ),
-    ).length;
+  const totalApplicable = attendanceRecords.filter((record) =>
+    ["Present", "Absent", "Late"].includes(record.status),
+  ).length;
 
   const overallAttendancePercentage =
     totalApplicable > 0
-      ? Math.round(
-          (totalPresent /
-            totalApplicable) *
-            100,
-        )
+      ? Math.round((totalPresent / totalApplicable) * 100)
       : 0;
 
   /**
@@ -264,28 +237,21 @@ const getMentorDashboard = asyncHandler(async (req, res) => {
    * TOTAL COMPLETED TOPICS
    * =========================
    */
-  const totalCompletedTopics =
-    studentStats.reduce(
-      (total, student) =>
-        total +
-        student.completedTopics,
-      0,
-    );
+  const totalCompletedTopics = studentStats.reduce(
+    (total, student) => total + student.completedTopics,
+    0,
+  );
 
   /**
    * =========================
    * MENTOR ASSIGNMENTS
    * =========================
    */
-  const assignments =
-    await Assignment.find({
-      createdBy: mentorId,
-    }).select("_id title maxScore deadline");
+  const assignments = await Assignment.find({
+    createdBy: mentorId,
+  }).select("_id title maxScore deadline");
 
-  const assignmentIds =
-    assignments.map(
-      (assignment) => assignment._id,
-    );
+  const assignmentIds = assignments.map((assignment) => assignment._id);
 
   /**
    * =========================
@@ -306,14 +272,8 @@ const getMentorDashboard = asyncHandler(async (req, res) => {
 
           status: "Submitted",
         })
-          .populate(
-            "student",
-            "name email",
-          )
-          .populate(
-            "assignment",
-            "title maxScore deadline",
-          )
+          .populate("student", "name email")
+          .populate("assignment", "title maxScore deadline")
           .sort({
             submittedAt: -1,
           })
@@ -343,8 +303,7 @@ const getMentorDashboard = asyncHandler(async (req, res) => {
     success: true,
 
     data: {
-      assignedStudentCount:
-        students.length,
+      assignedStudentCount: students.length,
 
       studentStats,
 
@@ -354,16 +313,14 @@ const getMentorDashboard = asyncHandler(async (req, res) => {
 
       pendingGradingQueue,
 
-      assignedBatchCount:
-        batches.length,
+      assignedBatchCount: batches.length,
 
       overallAttendancePercentage,
 
       totalCompletedTopics,
     },
 
-    message:
-      "Mentor dashboard data fetched",
+    message: "Mentor dashboard data fetched",
   });
 });
 
@@ -372,137 +329,105 @@ const getMentorDashboard = asyncHandler(async (req, res) => {
  * STUDENT DASHBOARD
  * =========================
  */
-const getStudentDashboard = asyncHandler(
-  async (req, res) => {
-    const studentId = req.user.id;
+const getStudentDashboard = asyncHandler(async (req, res) => {
+  const studentId = req.user.id;
 
-    /**
-     * Attendance
-     */
-    const attendanceRecords =
-      await Attendance.find({
-        student: studentId,
-      });
+  /**
+   * Attendance
+   */
+  const attendanceRecords = await Attendance.find({
+    student: studentId,
+  });
 
-    const present =
-      attendanceRecords.filter(
-        (record) =>
-          record.status === "Present",
-      ).length;
+  const present = attendanceRecords.filter(
+    (record) => record.status === "Present",
+  ).length;
 
-    const applicable =
-      attendanceRecords.filter((record) =>
-        ["Present", "Absent", "Late"].includes(
-          record.status,
-        ),
-      ).length;
+  const applicable = attendanceRecords.filter((record) =>
+    ["Present", "Absent", "Late"].includes(record.status),
+  ).length;
 
-    const attendancePercentage =
-      applicable > 0
-        ? Math.round(
-            (present / applicable) * 100,
-          )
-        : 0;
+  const attendancePercentage =
+    applicable > 0 ? Math.round((present / applicable) * 100) : 0;
 
-    /**
-     * Progress
-     */
-    const progressRecords =
-      await Progress.find({
-        student: studentId,
-      });
+  /**
+   * Progress
+   */
+  const progressRecords = await Progress.find({
+    student: studentId,
+  });
 
-    const completedTopics =
-      progressRecords.filter(
-        (progress) =>
-          progress.status === "Completed",
-      ).length;
+  const completedTopics = progressRecords.filter(
+    (progress) => progress.status === "Completed",
+  ).length;
 
-    /**
-     * Graded submissions
-     */
-    const submissions =
-      await Submission.find({
-        student: studentId,
-        status: "Graded",
-      }).populate("assignment");
+  /**
+   * Graded submissions
+   */
+  const submissions = await Submission.find({
+    student: studentId,
+    status: "Graded",
+  }).populate("assignment");
 
-    const scores = submissions
-      .filter(
-        (submission) =>
-          submission.assignment?.maxScore,
-      )
-      .map(
-        (submission) =>
-          (submission.score /
-            submission.assignment
-              .maxScore) *
-          100,
-      );
+  const scores = submissions
+    .filter((submission) => submission.assignment?.maxScore)
+    .map(
+      (submission) => (submission.score / submission.assignment.maxScore) * 100,
+    );
 
-    const averageGrade =
-      scores.length > 0
-        ? Math.round(
-            scores.reduce(
-              (total, score) =>
-                total + score,
-              0,
-            ) / scores.length,
-          )
-        : 0;
+  const averageGrade =
+    scores.length > 0
+      ? Math.round(
+          scores.reduce((total, score) => total + score, 0) / scores.length,
+        )
+      : 0;
 
-    /**
-     * Recent announcements
-     * Only announcements this student is actually targeted by
-     * (All / Students / their specific batch), already published.
-     */
-    const announcementFilter =
-      await getVisibleAnnouncementsFilter(req.user);
+  /**
+   * Recent announcements
+   * Only announcements this student is actually targeted by
+   * (All / Students / their specific batch), already published.
+   */
+  const announcementFilter = await getVisibleAnnouncementsFilter(req.user);
 
-    const recentAnnouncements =
-      await Announcement.find(announcementFilter)
-        .sort({
-          publishDate: -1,
-        })
-        .limit(5);
+  const recentAnnouncements = await Announcement.find(announcementFilter)
+    .sort({
+      publishDate: -1,
+    })
+    .limit(5);
 
-    /**
-     * Upcoming assignments
-     */
-    const upcomingAssignments =
-      await Assignment.find({
-        deadline: {
-          $gte: new Date(),
-        },
-      })
-        .sort({
-          deadline: 1,
-        })
-        .limit(5);
+  /**
+   * Upcoming assignments
+   */
+  const upcomingAssignments = await Assignment.find({
+    deadline: {
+      $gte: new Date(),
+    },
+  })
+    .sort({
+      deadline: 1,
+    })
+    .limit(5);
 
-    res.status(200).json({
-      success: true,
+  res.status(200).json({
+    success: true,
 
-      data: {
-        attendancePercentage,
+    data: {
+      attendancePercentage,
 
-        completedTopics,
+      completedTopics,
 
-        averageGrade,
+      averageGrade,
 
-        assignmentCount:
-          submissions.length,
+      assignmentCount: submissions.length,
 
-        recentAnnouncements,
+      recentAnnouncements,
 
-        upcomingAssignments,
-      },
+      upcomingAssignments,
+    },
 
-      message:
-        "Student dashboard data fetched",
-    });
-  },
-);
+    message: "Student dashboard data fetched",
+  });
+});
 
 module.exports = {
   getAdminDashboard,
