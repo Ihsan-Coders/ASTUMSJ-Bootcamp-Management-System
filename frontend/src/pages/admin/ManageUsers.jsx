@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import MentorForm from '../../components/admin/MentorForm';
+import AdminForm from '../../components/admin/AdminForm';
 import UserTable from '../../components/admin/UserTable';
 
 
@@ -14,7 +15,10 @@ export default function ManageMentors() {
       </h1>
 
       <div className="grid lg:grid-cols-[320px_1fr] gap-6 items-start">
-        <MentorForm onCreated={bumpRefresh} />
+        <div className="flex flex-col gap-6">
+          <MentorForm onCreated={bumpRefresh} />
+          <AdminForm onCreated={bumpRefresh} />
+        </div>
         <UserTable refreshKey={refreshKey} />
       </div>
     </div>

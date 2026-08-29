@@ -15,8 +15,15 @@ const {
 
 router.use(protect);
 
-// Admin attendance management
-router.post("/", authorize("admin"), markAttendance);
+// ======================================================
+// ADMIN ATTENDANCE MANAGEMENT
+// ======================================================
+
+router.post(
+  "/",
+  authorize("admin"),
+  markAttendance,
+);
 
 router.post(
   "/bulk",
@@ -35,7 +42,11 @@ router.delete(
   authorize("admin"),
   deleteAttendance,
 );
-// Admin / Mentor / Student attendance viewing
+
+// ======================================================
+// ATTENDANCE VIEWING
+// ======================================================
+
 router.get(
   "/",
   authorize("admin", "mentor", "student"),

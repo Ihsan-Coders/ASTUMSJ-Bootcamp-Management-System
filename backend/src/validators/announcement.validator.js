@@ -12,6 +12,8 @@ const createAnnouncementSchema = Joi.object({
     otherwise: Joi.optional().allow(null, ''),
   }),
   publishDate: Joi.date().optional(),
+  isSession: Joi.boolean().optional(),
+  sessionDate: Joi.date().optional().allow(null, ''),
 });
 
 const updateAnnouncementSchema = Joi.object({
@@ -20,7 +22,10 @@ const updateAnnouncementSchema = Joi.object({
   targetAudience: Joi.string().valid(...AUDIENCES),
   batch: Joi.string().hex().length(24).allow(null, ''),
   publishDate: Joi.date(),
+  isSession: Joi.boolean().optional(),
+  sessionDate: Joi.date().optional().allow(null, ''),
 }).min(1);
+
 
 module.exports = {
   createAnnouncementSchema,

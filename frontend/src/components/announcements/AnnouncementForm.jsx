@@ -17,6 +17,22 @@ const EMPTY_FORM = {
   content: "",
   targetAudience: "All",
   batch: "",
+  isSession: false,
+  sessionDate: "",
+};
+
+const toDatetimeLocal = (value) => {
+  if (!value) return "";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) return "";
+
+  const offset = date.getTimezoneOffset();
+
+  return new Date(date.getTime() - offset * 60000)
+    .toISOString()
+    .slice(0, 16);
 };
 
 const toFormValues = (announcement) => ({
@@ -24,17 +40,10 @@ const toFormValues = (announcement) => ({
   content: announcement?.content || "",
   targetAudience: announcement?.targetAudience || "All",
   batch: announcement?.batch?._id || announcement?.batch || "",
+  isSession: Boolean(announcement?.isSession),
+  sessionDate: toDatetimeLocal(announcement?.sessionDate),
 });
 
-/**
- * Create or edit an announcement.
- *
- * mode="create" (default): posts a new announcement, resets the form
- *   on success, and calls onSuccess with the created announcement.
- * mode="edit": requires `announcement`, submits a PUT, and calls
- *   onSuccess with the updated announcement. onCancel is shown next
- *   to the submit button.
- */
 export default function AnnouncementForm({
   mode = "create",
   announcement = null,
@@ -44,73 +53,122 @@ export default function AnnouncementForm({
   const [form, setForm] = useState(
     mode === "edit" ? toFormValues(announcement) : EMPTY_FORM,
   );
+
   const [batches, setBatches] = useState([]);
   const [loadingBatches, setLoadingBatches] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  // Note: no effect is needed to sync `form` when `announcement` changes —
-  // the parent (ManageAnnouncements) always conditionally mounts a fresh
-  // AnnouncementForm per announcement being edited, so the useState
-  // initializer above already picks up the right values on mount.
-
   useEffect(() => {
     let cancelled = false;
+
     getBatches()
       .then((res) => {
         if (cancelled) return;
-        setBatches(res.data.data || []);
+
+        setBatches(res.data?.data || []);
       })
       .catch(() => {
         if (cancelled) return;
-        // Batches are only required for "Specific Batch" targeting —
-        // fail silently here, the select will just show no options.
+
         setBatches([]);
       })
       .finally(() => {
-        if (!cancelled) setLoadingBatches(false);
+        if (!cancelled) {
+          setLoadingBatches(false);
+        }
       });
+
     return () => {
       cancelled = true;
     };
   }, []);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((current) => ({ ...current, [name]: value }));
+    const { name, value, type, checked } = e.target;
+
+    setForm((current) => ({
+      ...current,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  const handleAudienceChange = (value) => {
+    setForm((current) => ({
+      ...current,
+      targetAudience: value,
+      batch:
+        value === "SpecificBatch" || current.isSession
+          ? current.batch
+          : "",
+    }));
+  };
+
+  const handleSessionToggle = (checked) => {
+    setForm((current) => ({
+      ...current,
+      isSession: checked,
+      sessionDate: checked ? current.sessionDate : "",
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    setError("");
+
     if (form.targetAudience === "SpecificBatch" && !form.batch) {
-      setError("Choose a batch for a batch-specific announcement");
+      setError("Choose a batch for a batch-specific announcement.");
+      return;
+    }
+
+    if (form.isSession && !form.sessionDate) {
+      setError("Choose the date and time of the class session.");
+      return;
+    }
+
+    if (form.isSession && !form.batch) {
+      setError("A class session must be assigned to a batch.");
       return;
     }
 
     setSubmitting(true);
-    setError("");
 
     const payload = {
       title: form.title,
       content: form.content,
       targetAudience: form.targetAudience,
-      batch: form.targetAudience === "SpecificBatch" ? form.batch : null,
+      batch:
+        form.targetAudience === "SpecificBatch" || form.isSession
+          ? form.batch
+          : null,
+      isSession: form.isSession,
+      sessionDate: form.isSession ? form.sessionDate : null,
     };
 
     try {
       if (mode === "edit") {
-        const res = await updateAnnouncement(announcement._id, payload);
+        const res = await updateAnnouncement(
+          announcement._id,
+          payload,
+        );
+
         onSuccess?.(res.data.data);
       } else {
+        console.log("DEBUG: form.isSession:", form.isSession, typeof form.isSession);
+        console.log("DEBUG: payload before API:", payload);
         const res = await createAnnouncement(payload);
+
         setForm(EMPTY_FORM);
+
         onSuccess?.(res.data.data);
       }
     } catch (err) {
       setError(
         err?.response?.data?.message ||
-          `Failed to ${mode === "edit" ? "update" : "create"} announcement`,
+          `Failed to ${
+            mode === "edit" ? "update" : "create"
+          } announcement.`,
       );
     } finally {
       setSubmitting(false);
@@ -132,10 +190,17 @@ export default function AnnouncementForm({
         </h3>
       )}
 
+      {error && (
+        <div className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2">
+          <p className="text-danger text-sm">{error}</p>
+        </div>
+      )}
+
       <div>
         <label className="block text-xs text-text-secondary mb-1">
           Title
         </label>
+
         <input
           type="text"
           name="title"
@@ -152,6 +217,7 @@ export default function AnnouncementForm({
         <label className="block text-xs text-text-secondary mb-1">
           Content
         </label>
+
         <textarea
           name="content"
           value={form.content}
@@ -165,19 +231,16 @@ export default function AnnouncementForm({
       </div>
 
       <div>
-        <p className="text-text-secondary text-xs mb-2">Target audience</p>
+        <p className="text-text-secondary text-xs mb-2">
+          Target audience
+        </p>
+
         <div className="flex flex-wrap gap-2">
           {AUDIENCES.map((a) => (
             <button
               key={a.value}
               type="button"
-              onClick={() =>
-                setForm((current) => ({
-                  ...current,
-                  targetAudience: a.value,
-                  batch: a.value === "SpecificBatch" ? current.batch : "",
-                }))
-              }
+              onClick={() => handleAudienceChange(a.value)}
               className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
                 form.targetAudience === a.value
                   ? "bg-gradient-to-r from-gold to-emerald text-obsidian border-transparent"
@@ -195,6 +258,7 @@ export default function AnnouncementForm({
           <label className="block text-xs text-text-secondary mb-1">
             Batch
           </label>
+
           <select
             name="batch"
             value={form.batch}
@@ -204,14 +268,18 @@ export default function AnnouncementForm({
             className="w-full p-2.5 rounded border border-border bg-background text-text-primary text-sm"
           >
             <option value="" disabled>
-              {loadingBatches ? "Loading batches…" : "Select a batch"}
+              {loadingBatches
+                ? "Loading batches..."
+                : "Select a batch"}
             </option>
-            {batches.map((b) => (
-              <option key={b._id} value={b._id}>
-                {b.name}
+
+            {batches.map((batch) => (
+              <option key={batch._id} value={batch._id}>
+                {batch.name}
               </option>
             ))}
           </select>
+
           {!loadingBatches && batches.length === 0 && (
             <p className="text-xs text-text-secondary mt-1">
               No batches exist yet.
@@ -220,18 +288,70 @@ export default function AnnouncementForm({
         </div>
       )}
 
-      {error && <p className="text-danger text-sm">{error}</p>}
+      {/* SESSION SETTINGS */}
+
+      <div className="rounded-lg border border-border bg-surface/30 p-4 space-y-3">
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            name="isSession"
+            checked={form.isSession}
+            onChange={(e) =>
+              handleSessionToggle(e.target.checked)
+            }
+            className="mt-1 accent-gold"
+          />
+
+          <div>
+            <p className="text-sm font-medium text-text-primary">
+              This announcement is a class session
+            </p>
+
+            <p className="text-xs text-text-secondary mt-1">
+              Automatically add this class to the calendar and make
+              it available for attendance marking.
+            </p>
+          </div>
+        </label>
+
+        {form.isSession && (
+          <>
+            <div>
+              <label className="block text-xs text-text-secondary mb-1">
+                Session date & time
+              </label>
+
+              <input
+                type="datetime-local"
+                name="sessionDate"
+                value={form.sessionDate}
+                onChange={handleChange}
+                required
+                className="w-full p-2.5 rounded border border-border bg-background text-text-primary text-sm"
+              />
+            </div>
+
+            {!form.batch && (
+              <p className="text-xs text-danger">
+                Select a specific batch for the class session.
+              </p>
+            )}
+          </>
+        )}
+      </div>
 
       <div className="flex gap-2">
         {mode === "edit" && (
           <button
             type="button"
             onClick={onCancel}
-            className="flex-1 py-2.5 rounded font-semibold text-text-secondary border border-border hover:text-text-primary"
+            disabled={submitting}
+            className="flex-1 py-2.5 rounded font-semibold text-text-secondary border border-border hover:text-text-primary disabled:opacity-50"
           >
             Cancel
           </button>
         )}
+
         <button
           type="submit"
           disabled={submitting}
@@ -239,8 +359,8 @@ export default function AnnouncementForm({
         >
           {submitting
             ? mode === "edit"
-              ? "Saving…"
-              : "Publishing…"
+              ? "Saving..."
+              : "Publishing..."
             : mode === "edit"
               ? "Save Changes"
               : "Publish Announcement"}

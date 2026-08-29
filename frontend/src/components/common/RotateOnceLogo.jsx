@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import imageLogo from "../../assets/astu-msj-logo.jpg";
 
 // Spins a full 360° exactly once when the page loads, then stays still.
 export default function RotateOnceLogo() {
@@ -14,7 +15,7 @@ export default function RotateOnceLogo() {
     >
       <div className="w-full h-full rounded-full overflow-hidden bg-obsidian">
         <img
-          src="/src/assets/astu-msj-logo.jpg"
+          src={imageLogo}
           alt="ASTU MSJ Bootcamp Logo"
           className="w-full h-full object-cover"
           onError={(e) => {
