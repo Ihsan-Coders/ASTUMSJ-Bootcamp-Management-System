@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+
 const userSchema = new mongoose.Schema(
   {
     name: {
@@ -36,18 +37,28 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
 
+    mentor: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+
     isActive: {
       type: Boolean,
       default: true,
     },
+
     codeforcesHandle: {
       type: String,
       trim: true,
       default: "",
+    },
+
     passwordResetToken: {
       type: String,
       select: false,
     },
+
     passwordResetExpires: {
       type: Date,
       select: false,
