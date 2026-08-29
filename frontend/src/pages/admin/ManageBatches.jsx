@@ -2,15 +2,12 @@ import { useState } from "react";
 import BatchForm from "../../components/admin/BatchForm";
 import BatchTable from "../../components/admin/BatchTable";
 import AssignMentorModal from "../../components/admin/AssignMentorModal";
-import EnrollStudentModal from "../../components/admin/EnrollStudentModal";
-import AssignMentorToStudentModal from "../../components/admin/AssignMentorToStudentModal";
+
 
 export default function ManageBatches() {
   const [refreshKey, setRefreshKey] = useState(0);
 
   const [assignOpen, setAssignOpen] = useState(false);
-  const [enrollOpen, setEnrollOpen] = useState(false);
-  const [assignStudentMentorOpen, setAssignStudentMentorOpen] = useState(false);
 
   const bumpRefresh = () => setRefreshKey((k) => k + 1);
 
@@ -23,14 +20,6 @@ export default function ManageBatches() {
 
         <div className="flex flex-wrap gap-2">
           {/* Enroll student into batch */}
-          <button
-            onClick={() => setEnrollOpen(true)}
-            className="px-4 py-2 rounded text-sm font-semibold text-obsidian bg-gradient-to-r from-gold to-emerald"
-          >
-            Enroll Student
-          </button>
-
-          {/* Assign mentors to batch */}
           <button
             onClick={() => setAssignOpen(true)}
             className="px-4 py-2 rounded text-sm font-semibold text-obsidian bg-gradient-to-r from-gold to-emerald"
@@ -60,19 +49,6 @@ export default function ManageBatches() {
         onAssigned={bumpRefresh}
       />
 
-      {/* Enroll student into a batch */}
-      <EnrollStudentModal
-        isOpen={enrollOpen}
-        onClose={() => setEnrollOpen(false)}
-        onEnrolled={bumpRefresh}
-      />
-
-      {/* Assign a specific mentor to a specific student */}
-      <AssignMentorToStudentModal
-        isOpen={assignStudentMentorOpen}
-        onClose={() => setAssignStudentMentorOpen(false)}
-        onAssigned={bumpRefresh}
-      />
     </div>
   );
 }

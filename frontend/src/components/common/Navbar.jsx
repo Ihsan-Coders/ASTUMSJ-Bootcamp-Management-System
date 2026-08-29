@@ -52,6 +52,11 @@ const ROLE_LINKS = {
       icon: Layers,
     },
     {
+      label: "Attendance",
+      path: "/admin/attendance",
+      icon: ClipboardCheck,
+    },
+    {
       label: "Applications",
       path: "/admin/applications",
       icon: ClipboardList,
@@ -108,11 +113,6 @@ const ROLE_LINKS = {
       label: "Dashboard",
       path: "/mentor",
       icon: Home,
-    },
-    {
-      label: "Attendance",
-      path: "/mentor/attendance",
-      icon: ClipboardCheck,
     },
     {
       label: "Assignments",

@@ -1,12 +1,29 @@
 const calculateAttendancePercentage = (attendanceRecords) => {
-  if (!attendanceRecords || attendanceRecords.length === 0) return 0;
-  const applicableStatuses = ['Present', 'Absent', 'Late']; // Excused typically doesn't count against total
-  const applicableRecords = attendanceRecords.filter((r) => applicableStatuses.includes(r.status));
-  const presentCount = attendanceRecords.filter((r) => r.status === 'Present').length;
+  if (!attendanceRecords || attendanceRecords.length === 0) {
+    return 0;
+  }
 
-  if (applicableRecords.length === 0) return 0;
+  const applicableRecords = attendanceRecords.filter((record) =>
+    ["Present", "Absent", "Late"].includes(record.status),
+  );
 
-  return Math.round((presentCount / applicableRecords.length) * 100);
+  if (applicableRecords.length === 0) {
+    return 0;
+  }
+
+  const attendedRecords = applicableRecords.filter(
+    (record) =>
+      record.status === "Present" || record.status === "Late",
+  );
+
+  return Math.round(
+    (attendedRecords.length / applicableRecords.length) * 100,
+  );
 };
 
-module.exports = { calculateAttendancePercentage };
+const isAtRisk = (percentage) => percentage < 75;
+
+module.exports = {
+  calculateAttendancePercentage,
+  isAtRisk,
+};

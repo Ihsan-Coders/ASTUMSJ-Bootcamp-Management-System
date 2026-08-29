@@ -11,3 +11,4 @@ export const assignMentorToStudent = (data) =>
 export const updateBatch = (id, data) =>
   axiosInstance.put(`/batches/${id}`, data);
 export const deleteBatch = (id) => axiosInstance.delete(`/batches/${id}`);
+export const setAcceptingBatch = (id) => axiosInstance.put(`/batches/${id}/set-accepting`);

@@ -53,7 +53,6 @@ const userSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
-
     passwordResetToken: {
       type: String,
       select: false,

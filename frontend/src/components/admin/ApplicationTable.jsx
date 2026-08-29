@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import Table from "../common/Table";
 import Modal from "../common/Modal";
+import { useConfirm } from "../../context/ConfirmContext";
 import AssignApplicationMentorModal from "./AssignApplicationMentorModal";
 import {
   getApplications,
@@ -20,6 +21,7 @@ const STATUS_OPTIONS = [
 ];
 
 export default function ApplicationTable({ refreshKey }) {
+  const confirm = useConfirm();
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -29,6 +31,7 @@ export default function ApplicationTable({ refreshKey }) {
   const [assigning, setAssigning] = useState(null);
   const [actionError, setActionError] = useState("");
   const [actioningId, setActioningId] = useState(null);
+  const [credentials, setCredentials] = useState(null);
 
   const fetchApplications = () => {
     const params = {};
@@ -63,7 +66,11 @@ export default function ApplicationTable({ refreshKey }) {
   };
 
   const handleReject = async (application) => {
-    if (!window.confirm(`Reject ${application.name}'s application?`)) return;
+    const ok = await confirm(`Reject ${application.name}'s application?`, {
+      title: "Reject application",
+      confirmLabel: "Reject",
+    });
+    if (!ok) return;
     setActionError("");
     setActioningId(application._id);
     try {
@@ -78,12 +85,18 @@ export default function ApplicationTable({ refreshKey }) {
 
   const handleFinalDecision = async (application, decision) => {
     const verb = decision === "pass" ? "accept" : "decline";
-    if (!window.confirm(`${verb === "accept" ? "Accept" : "Decline"} ${application.name}?`))
-      return;
+    const ok = await confirm(
+      `${verb === "accept" ? "Accept" : "Decline"} ${application.name}?`,
+      { title: "Final decision", confirmLabel: verb === "accept" ? "Accept" : "Decline" }
+    );
+    if (!ok) return;
     setActionError("");
     setActioningId(application._id);
     try {
-      await finalDecision(application._id, decision);
+      const res = await finalDecision(application._id, decision);
+      if (decision === "pass" && res.data.data?.tempPassword) {
+        setCredentials(res.data.data);
+      }
       fetchApplications();
     } catch (err) {
       setActionError(err?.response?.data?.message || `Failed to ${verb} applicant`);
@@ -344,6 +357,39 @@ export default function ApplicationTable({ refreshKey }) {
         onClose={() => setAssigning(null)}
         onAssigned={fetchApplications}
       />
+
+      <Modal
+        isOpen={!!credentials}
+        onClose={() => setCredentials(null)}
+        title="Student Account Created"
+      >
+        {credentials && (
+          <div className="space-y-2 text-sm">
+            <p className="text-danger">
+              Email sending isn't configured yet — share these credentials
+              with the student manually.
+            </p>
+            <p>
+              <span className="text-text-secondary">Name:</span>{" "}
+              {credentials.student.name}
+            </p>
+            <p>
+              <span className="text-text-secondary">Email:</span>{" "}
+              {credentials.student.email}
+            </p>
+            <p>
+              <span className="text-text-secondary">Batch:</span>{" "}
+              {credentials.student.batch}
+            </p>
+            <p>
+              <span className="text-text-secondary">Temporary password:</span>{" "}
+              <span className="font-mono text-gold">
+                {credentials.tempPassword}
+              </span>
+            </p>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

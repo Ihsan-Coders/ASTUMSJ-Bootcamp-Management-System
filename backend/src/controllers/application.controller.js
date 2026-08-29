@@ -2,6 +2,8 @@ const mongoose = require('mongoose');
 const Application = require('../models/Application');
 const User = require('../models/User');
 const InterviewQuestion = require('../models/InterviewQuestion');
+const Batch = require('../models/Batch');
+const { hashPassword } = require('../utils/hashPassword');
 const asyncHandler = require('../utils/asyncHandler');
 
 // Statuses that count as "an application already in progress" for the
@@ -270,13 +272,25 @@ const submitInterviewResult = asyncHandler(async (req, res) => {
 
 // PUT /api/applications/:id/final-decision — admin only.
 // Only valid from "Interview Completed". The mentor's scored answers/note
-// informational only — it does not automatically decide the outcome, and
-// this endpoint is the only place status can become Passed/Failed.
+// are informational only — it does not automatically decide the outcome,
+// and this endpoint is the only place status can become Passed/Failed.
 //
-// Student-account creation and admission emails are intentionally NOT
-// implemented here: services/email.service.js is currently an empty file
-// with no working email capability, and building one is outside this
-// task's scope. This endpoint only performs the state transition.
+// On "pass": creates the actual Student account and places it into
+// whichever Batch currently has isAcceptingApplicants=true (set via
+// Manage Batches). A random temporary password is generated and returned
+// directly in this response — NOT emailed, since services/email.service.js
+// is still an empty file with no working email transport. Admin is
+// expected to relay it manually until that's wired in. This is an
+// intentional interim behavior, not a finished feature.
+const generateTempPassword = () => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%';
+  let pwd = '';
+  for (let i = 0; i < 12; i++) {
+    pwd += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return pwd;
+};
+
 const finalDecision = asyncHandler(async (req, res) => {
   const { decision } = req.body;
 
@@ -294,13 +308,64 @@ const finalDecision = asyncHandler(async (req, res) => {
     });
   }
 
-  application.status = decision === 'pass' ? 'Passed' : 'Failed';
+  if (decision === 'fail') {
+    application.status = 'Failed';
+    await application.save();
+
+    return res.status(200).json({
+      success: true,
+      data: application,
+      message: 'Application marked as Failed',
+    });
+  }
+
+  // decision === 'pass'
+  const existingUser = await User.findOne({ email: application.email });
+  if (existingUser) {
+    return res.status(409).json({
+      success: false,
+      data: null,
+      message: 'A user with this email already exists',
+    });
+  }
+
+  const acceptingBatch = await Batch.findOne({ isAcceptingApplicants: true });
+  if (!acceptingBatch) {
+    return res.status(400).json({
+      success: false,
+      data: null,
+      message:
+        'No batch is currently set as accepting applicants. Set one in Manage Batches first.',
+    });
+  }
+
+  const tempPassword = generateTempPassword();
+  const hashedPassword = await hashPassword(tempPassword);
+
+  const student = await User.create({
+    name: application.name,
+    email: application.email,
+    password: hashedPassword,
+    role: 'student',
+    batch: acceptingBatch._id,
+    isActive: true,
+  });
+
+  acceptingBatch.students.addToSet(student._id);
+  await acceptingBatch.save();
+
+  application.status = 'Passed';
   await application.save();
 
   res.status(200).json({
     success: true,
-    data: application,
-    message: `Application marked as ${application.status}`,
+    data: {
+      application,
+      student: { name: student.name, email: student.email, batch: acceptingBatch.name },
+      tempPassword,
+    },
+    message:
+      'Application marked as Passed — Student account created. Share the temporary password manually; email sending is not yet configured.',
   });
 });
 

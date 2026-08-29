@@ -36,6 +36,8 @@ const createBatch = asyncHandler(async (req, res) => {
     endDate,
     registrationStart,
     registrationEnd,
+    isActive: false,
+    isAcceptingApplicants: false,
   });
 
   res.status(201).json({
@@ -49,9 +51,17 @@ const createBatch = asyncHandler(async (req, res) => {
  * GET ALL BATCHES
  */
 const getBatches = asyncHandler(async (req, res) => {
-  const batches = await Batch.find()
-    .populate("mentors", "name email role")
-    .populate("students", "name email role");
+  const batches = await Batch.find().populate(
+    "mentors students",
+    "name email role",
+  );
+
+  res.status(200).json({
+    success: true,
+    data: batches,
+    message: "Batches fetched",
+  });
+});
 
   res.status(200).json({
     success: true,
@@ -70,6 +80,7 @@ const getOpenBatches = asyncHandler(async (req, res) => {
     registrationStart: { $lte: now },
     registrationEnd: { $gte: now },
     isActive: true,
+    isAcceptingApplicants: true,
   }).select("name registrationEnd");
 
   res.status(200).json({
@@ -83,12 +94,37 @@ const getOpenBatches = asyncHandler(async (req, res) => {
  * UPDATE BATCH
  */
 const updateBatch = asyncHandler(async (req, res) => {
+  // IMPORTANT: get the allowed updates from the request body
   const updates = getAllowedUpdates(req.body);
 
-  const batch = await Batch.findByIdAndUpdate(req.params.id, updates, {
-    new: true,
-    runValidators: true,
-  });
+  // If an admin activates this batch,
+  // deactivate every other batch.
+  if (updates.isActive === true) {
+    await Batch.updateMany(
+      { _id: { $ne: req.params.id }, isActive: true },
+      {
+        $set: {
+          isActive: false,
+          isAcceptingApplicants: false,
+        },
+      },
+    );
+  }
+
+  // If an admin deactivates this batch,
+  // it must stop accepting applicants too.
+  if (updates.isActive === false) {
+    updates.isAcceptingApplicants = false;
+  }
+
+  const batch = await Batch.findByIdAndUpdate(
+    req.params.id,
+    updates,
+    {
+      new: true,
+      runValidators: true,
+    },
+  );
 
   if (!batch) {
     return res.status(404).json({
@@ -109,7 +145,7 @@ const updateBatch = asyncHandler(async (req, res) => {
  * DELETE BATCH
  */
 const deleteBatch = asyncHandler(async (req, res) => {
-  const batch = await Batch.findByIdAndDelete(req.params.id);
+  const batch = await Batch.findById(req.params.id);
 
   if (!batch) {
     return res.status(404).json({
@@ -119,19 +155,18 @@ const deleteBatch = asyncHandler(async (req, res) => {
     });
   }
 
-  // Remove batch and mentor relationship from students.
-  await User.updateMany(
-    {
-      role: "student",
-      batch: batch._id,
-    },
-    {
-      $set: {
-        batch: null,
-        mentor: null,
-      },
-    },
-  );
+  // Do not allow deleting a batch that is still operational
+  // or accepting applicants.
+  if (batch.isActive || batch.isAcceptingApplicants) {
+    return res.status(400).json({
+      success: false,
+      data: null,
+      message:
+        "Active or accepting batches cannot be deleted. Deactivate the batch first.",
+    });
+  }
+
+  await batch.deleteOne();
 
   res.status(200).json({
     success: true,
@@ -153,29 +188,11 @@ const deleteBatch = asyncHandler(async (req, res) => {
 const assignMentorToBatch = asyncHandler(async (req, res) => {
   const { batchId, mentorId } = req.body;
 
-  if (!batchId || !mentorId) {
-    return res.status(400).json({
-      success: false,
-      data: null,
-      message: "batchId and mentorId are required",
-    });
-  }
-
-  const mentor = await User.findOne({
-    _id: mentorId,
-    role: "mentor",
-    isActive: true,
-  });
-
-  if (!mentor) {
-    return res.status(404).json({
-      success: false,
-      data: null,
-      message: "Mentor not found or inactive",
-    });
-  }
-
-  const batch = await Batch.findById(batchId);
+  const batch = await Batch.findByIdAndUpdate(
+    batchId,
+    { $addToSet: { mentors: mentorId } },
+    { new: true },
+  );
 
   if (!batch) {
     return res.status(404).json({
@@ -184,6 +201,13 @@ const assignMentorToBatch = asyncHandler(async (req, res) => {
       message: "Batch not found",
     });
   }
+
+  res.status(200).json({
+    success: true,
+    data: batch,
+    message: "Mentor assigned",
+  });
+});
 
   // Add mentor without removing existing mentors.
   // $addToSet prevents duplicate mentors.
@@ -215,29 +239,11 @@ const assignMentorToBatch = asyncHandler(async (req, res) => {
 const enrollStudentInBatch = asyncHandler(async (req, res) => {
   const { batchId, studentId } = req.body;
 
-  if (!batchId || !studentId) {
-    return res.status(400).json({
-      success: false,
-      data: null,
-      message: "batchId and studentId are required",
-    });
-  }
-
-  const student = await User.findOne({
-    _id: studentId,
-    role: "student",
-    isActive: true,
-  });
-
-  if (!student) {
-    return res.status(404).json({
-      success: false,
-      data: null,
-      message: "Student not found or inactive",
-    });
-  }
-
-  const batch = await Batch.findById(batchId);
+  const batch = await Batch.findByIdAndUpdate(
+    batchId,
+    { $addToSet: { students: studentId } },
+    { new: true },
+  );
 
   if (!batch) {
     return res.status(404).json({
@@ -247,126 +253,49 @@ const enrollStudentInBatch = asyncHandler(async (req, res) => {
     });
   }
 
-  // Remove student from previous batch.
-  if (student.batch) {
-    await Batch.findByIdAndUpdate(student.batch, {
-      $pull: {
-        students: student._id,
-      },
-    });
-  }
-
-  // Add student to new batch.
-  await Batch.findByIdAndUpdate(batchId, {
-    $addToSet: {
-      students: student._id,
-    },
+  await User.findByIdAndUpdate(studentId, {
+    batch: batchId,
   });
-
-  // Update student's batch.
-  student.batch = batch._id;
-
-  // Mentor must be explicitly assigned.
-  student.mentor = null;
-
-  await student.save();
-
-  const updatedBatch = await Batch.findById(batchId)
-    .populate("mentors", "name email role")
-    .populate("students", "name email role");
 
   res.status(200).json({
     success: true,
-    data: updatedBatch,
-    message: "Student enrolled in batch",
+    data: batch,
+    message: "Student enrolled",
   });
 });
 
-/**
- * ASSIGN SPECIFIC MENTOR TO SPECIFIC STUDENT
- *
- * Student -> ONE mentor
- * Mentor  -> MANY students
- *
- * IMPORTANT:
- * The mentor must already belong to the student's batch.
- */
-const assignMentorToStudent = asyncHandler(async (req, res) => {
-  const { studentId, mentorId } = req.body;
-
-  if (!studentId || !mentorId) {
-    return res.status(400).json({
-      success: false,
-      data: null,
-      message: "studentId and mentorId are required",
-    });
-  }
-
-  const student = await User.findOne({
-    _id: studentId,
-    role: "student",
-    isActive: true,
-  });
-
-  if (!student) {
-    return res.status(404).json({
-      success: false,
-      data: null,
-      message: "Student not found or inactive",
-    });
-  }
-
-  const mentor = await User.findOne({
-    _id: mentorId,
-    role: "mentor",
-    isActive: true,
-  });
-
-  if (!mentor) {
-    return res.status(404).json({
-      success: false,
-      data: null,
-      message: "Mentor not found or inactive",
-    });
-  }
-
-  // Student must first belong to a batch.
-  if (!student.batch) {
-    return res.status(400).json({
-      success: false,
-      data: null,
-      message: "Student must be enrolled in a batch first",
-    });
-  }
-
-  // Mentor must belong to the same batch as the student.
-  const batch = await Batch.findOne({
-    _id: student.batch,
-    mentors: mentor._id,
-  });
+const setAcceptingBatch = asyncHandler(async (req, res) => {
+  const batch = await Batch.findById(req.params.id);
 
   if (!batch) {
-    return res.status(400).json({
+    return res.status(404).json({
       success: false,
       data: null,
-      message: "This mentor is not assigned to the student's batch",
+      message: "Batch not found",
     });
   }
 
-  // Assign mentor to student.
-  student.mentor = mentor._id;
+  if (!batch.isActive) {
+    return res.status(400).json({
+      success: false,
+      data: null,
+      message: "Only an active batch can accept applicants",
+    });
+  }
 
-  await student.save();
+  await Batch.updateMany(
+    {},
+    { $set: { isAcceptingApplicants: false } },
+  );
 
-  const updatedStudent = await User.findById(student._id)
-    .select("_id name email role batch mentor")
-    .populate("batch", "name")
-    .populate("mentor", "name email role");
+  batch.isAcceptingApplicants = true;
+
+  await batch.save();
 
   res.status(200).json({
     success: true,
-    data: updatedStudent,
-    message: "Mentor assigned to student",
+    data: batch,
+    message: "Batch set as currently accepting applicants",
   });
 });
 
@@ -378,5 +307,5 @@ module.exports = {
   deleteBatch,
   assignMentorToBatch,
   enrollStudentInBatch,
-  assignMentorToStudent,
+  setAcceptingBatch,
 };

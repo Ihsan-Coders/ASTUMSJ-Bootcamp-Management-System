@@ -14,6 +14,7 @@ const EMPTY_FORM = {
 export default function ResourceUploadForm({ onCreated }) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [file, setFile] = useState(null);
+  const [thumbnail, setThumbnail] = useState(null);
   const [batches, setBatches] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -28,6 +29,7 @@ export default function ResourceUploadForm({ onCreated }) {
   const handleTypeChange = (type) => {
     setForm((current) => ({ ...current, type, url: "" }));
     setFile(null);
+    setThumbnail(null);
   };
 
   const handleSubmit = async (e) => {
@@ -63,10 +65,13 @@ export default function ResourceUploadForm({ onCreated }) {
         payload.append("url", form.url.trim());
       }
 
+      if (thumbnail) payload.append("thumbnail", thumbnail);
+
       await createResource(payload);
 
       setForm(EMPTY_FORM);
       setFile(null);
+      setThumbnail(null);
       setSuccess("Resource added successfully");
       onCreated?.();
     } catch (err) {
@@ -149,6 +154,21 @@ export default function ResourceUploadForm({ onCreated }) {
           </option>
         ))}
       </select>
+
+      <div>
+        <label className="block text-xs text-text-secondary mb-1">
+          Thumbnail (optional)
+        </label>
+        <input
+          type="file"
+          accept="image/png,image/jpeg"
+          onChange={(e) => setThumbnail(e.target.files?.[0] || null)}
+          className="w-full p-2 rounded border border-border bg-background text-text-primary text-sm"
+        />
+        <p className="text-xs text-text-secondary mt-1">
+          PNG or JPEG image shown on the resource card.
+        </p>
+      </div>
 
       {error && <p className="text-red-400 text-sm">{error}</p>}
       {success && <p className="text-emerald text-sm">{success}</p>}
