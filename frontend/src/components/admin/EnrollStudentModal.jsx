@@ -14,21 +14,30 @@ export default function EnrollStudentModal({ isOpen, onClose, onEnrolled }) {
 
   useEffect(() => {
     if (!isOpen) return;
+
     let cancelled = false;
+
+    setLoadingOptions(true);
+    setError("");
+
     Promise.all([getUsers({ role: "student" }), getBatches()])
       .then(([studentsRes, batchesRes]) => {
         if (cancelled) return;
-        setStudents(studentsRes.data.data);
-        setBatches(batchesRes.data.data);
-        setError("");
+
+        setStudents(studentsRes.data.data || []);
+        setBatches(batchesRes.data.data || []);
       })
       .catch((err) => {
         if (cancelled) return;
+
         setError(err?.response?.data?.message || "Failed to load options");
       })
       .finally(() => {
-        if (!cancelled) setLoadingOptions(false);
+        if (!cancelled) {
+          setLoadingOptions(false);
+        }
       });
+
     return () => {
       cancelled = true;
     };
@@ -36,16 +45,24 @@ export default function EnrollStudentModal({ isOpen, onClose, onEnrolled }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!studentId || !batchId) {
       setError("Choose both a student and a batch");
       return;
     }
+
     setSubmitting(true);
     setError("");
+
     try {
-      await enrollStudent({ batchId, studentId });
+      await enrollStudent({
+        batchId,
+        studentId,
+      });
+
       setStudentId("");
       setBatchId("");
+
       onEnrolled?.();
       onClose();
     } catch (err) {
@@ -68,6 +85,7 @@ export default function EnrollStudentModal({ isOpen, onClose, onEnrolled }) {
           >
             Cancel
           </button>
+
           <button
             onClick={handleSubmit}
             disabled={submitting || loadingOptions}
@@ -84,10 +102,12 @@ export default function EnrollStudentModal({ isOpen, onClose, onEnrolled }) {
         </p>
       ) : (
         <div className="space-y-3">
+          {/* Student */}
           <div>
             <label className="block text-xs text-text-secondary mb-1">
               Student
             </label>
+
             <select
               value={studentId}
               onChange={(e) => setStudentId(e.target.value)}
@@ -96,12 +116,14 @@ export default function EnrollStudentModal({ isOpen, onClose, onEnrolled }) {
               <option value="" disabled>
                 Select a student
               </option>
-              {students.map((s) => (
-                <option key={s._id} value={s._id}>
-                  {s.name} ({s.email})
+
+              {students.map((student) => (
+                <option key={student._id} value={student._id}>
+                  {student.name} ({student.email})
                 </option>
               ))}
             </select>
+
             {students.length === 0 && (
               <p className="text-xs text-text-secondary mt-1">
                 No student accounts exist yet.
@@ -109,10 +131,12 @@ export default function EnrollStudentModal({ isOpen, onClose, onEnrolled }) {
             )}
           </div>
 
+          {/* Batch */}
           <div>
             <label className="block text-xs text-text-secondary mb-1">
               Batch
             </label>
+
             <select
               value={batchId}
               onChange={(e) => setBatchId(e.target.value)}
@@ -121,9 +145,10 @@ export default function EnrollStudentModal({ isOpen, onClose, onEnrolled }) {
               <option value="" disabled>
                 Select a batch
               </option>
-              {batches.map((b) => (
-                <option key={b._id} value={b._id}>
-                  {b.name}
+
+              {batches.map((batch) => (
+                <option key={batch._id} value={batch._id}>
+                  {batch.name}
                 </option>
               ))}
             </select>
