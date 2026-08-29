@@ -30,6 +30,9 @@ router.use("/batches", batchRoutes);
 router.use("/users", userRoutes);
 router.use("/auth", authRoutes);
 
+const settingsRoutes = require('./settings.routes');
+router.use('/settings', settingsRoutes);
+
 router.use("/dashboard", require("./dashboard.routes"));
 router.use("/announcements", require("./announcement.routes"));
 

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { getPublicDashboard } from "../../api/dashboard.api";
+import { getRegistrationStatus } from '../../api/settings.api';
 
 const INSPIRATIONS = [
   {
@@ -36,6 +37,8 @@ export default function Hero() {
   });
 
   const [loading, setLoading] = useState(true);
+  const [registrationOpen, setRegistrationOpen] = useState(true);
+  const [regLoading, setRegLoading] = useState(true);
   const [inspirationIndex, setInspirationIndex] = useState(0);
 
   useEffect(() => {
@@ -58,6 +61,24 @@ export default function Hero() {
     };
 
     fetchStats();
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    setRegLoading(true);
+    getRegistrationStatus()
+      .then((res) => {
+        if (!mounted) return;
+        setRegistrationOpen(Boolean(res.data?.data?.registrationOpen));
+      })
+      .catch((err) => {
+        console.error('Failed to fetch registration status:', err);
+      })
+      .finally(() => setRegLoading(false));
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -184,6 +205,25 @@ export default function Hero() {
           >
             View Batches
           </button>
+          {/* Registration CTA */}
+          {!regLoading && (
+            registrationOpen ? (
+              <button
+                onClick={() => navigate('/register')}
+                className="px-6 py-3 rounded-lg font-semibold bg-emerald text-obsidian"
+              >
+                Apply Now
+              </button>
+            ) : (
+              <button
+                disabled
+                title="Registration is currently closed"
+                className="px-6 py-3 rounded-lg font-semibold bg-text-secondary/10 text-text-secondary cursor-not-allowed"
+              >
+                Registration Closed
+              </button>
+            )
+          )}
         </div>
       </motion.div>
 
