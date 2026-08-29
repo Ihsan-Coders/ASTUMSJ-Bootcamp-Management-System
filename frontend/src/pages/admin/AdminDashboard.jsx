@@ -15,17 +15,16 @@ import AnnouncementForm from "../../components/announcements/AnnouncementForm";
 import AnnouncementCard from "../../components/announcements/AnnouncementCard";
 import { getAdminDashboard } from "../../api/dashboard.api";
 import { getAnnouncements } from "../../api/announcement.api";
-import { getRegistrationStatus, updateRegistrationStatus } from '../../api/settings.api';
 
 // Fallback sample data — shown if the backend isn't ready yet or a request fails.
 // This keeps the dashboard looking complete during development or a live demo
 // even if a real API call hiccups.
 const FALLBACK_STATS = {
-  studentCount: 128,
-  mentorCount: 12,
-  batchCount: 4,
-  attendanceRate: 94,
-  gradedSubmissions: 312,
+  studentCount: 0,
+  mentorCount: 0,
+  batchCount: 0,
+  attendanceRate: 0,
+  gradedSubmissions: 0,
 };
 
 const FALLBACK_USERS = [
@@ -82,8 +81,6 @@ export default function AdminDashboard() {
   const [recentAnnouncements, setRecentAnnouncements] = useState([]);
   const [loadingAnnouncements, setLoadingAnnouncements] = useState(true);
   const [announcementsError, setAnnouncementsError] = useState("");
-  const [registrationOpen, setRegistrationOpen] = useState(true);
-  const [regLoading, setRegLoading] = useState(true);
 
   const loadRecentAnnouncements = () => {
     setLoadingAnnouncements(true);
@@ -103,14 +100,6 @@ export default function AdminDashboard() {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadRecentAnnouncements();
-  }, []);
-
-  useEffect(() => {
-    setRegLoading(true);
-    getRegistrationStatus()
-      .then((res) => setRegistrationOpen(Boolean(res.data?.data?.registrationOpen)))
-      .catch(() => {})
-      .finally(() => setRegLoading(false));
   }, []);
 
   useEffect(() => {
@@ -263,52 +252,6 @@ export default function AdminDashboard() {
                   </span>
                 </div>
               ))}
-            </div>
-          </div>
-
-          <div className="glass-card glow-border rounded-xl p-5">
-            <h2 className="text-text-primary font-semibold mb-4">Registration Management</h2>
-            <div>
-              <p className="text-text-secondary mb-3">
-                Current Status:{' '}
-                {regLoading ? (
-                  'Loading...'
-                ) : registrationOpen ? (
-                  <span className="text-emerald">🟢 Registration is Open</span>
-                ) : (
-                  <span className="text-danger">🔴 Registration is Closed</span>
-                )}
-              </p>
-
-              <div className="flex gap-2">
-                <button
-                  disabled={regLoading || registrationOpen}
-                  onClick={() => {
-                    setRegLoading(true);
-                    updateRegistrationStatus({ registrationOpen: true })
-                      .then((res) => setRegistrationOpen(Boolean(res.data?.data?.registrationOpen)))
-                      .catch((err) => console.error('Failed to open registration', err))
-                      .finally(() => setRegLoading(false));
-                  }}
-                  className="px-3 py-2 rounded bg-emerald text-obsidian disabled:opacity-60"
-                >
-                  Open Registration
-                </button>
-
-                <button
-                  disabled={regLoading || !registrationOpen}
-                  onClick={() => {
-                    setRegLoading(true);
-                    updateRegistrationStatus({ registrationOpen: false })
-                      .then((res) => setRegistrationOpen(Boolean(res.data?.data?.registrationOpen)))
-                      .catch((err) => console.error('Failed to close registration', err))
-                      .finally(() => setRegLoading(false));
-                  }}
-                  className="px-3 py-2 rounded bg-danger text-white disabled:opacity-60"
-                >
-                  Close Registration
-                </button>
-              </div>
             </div>
           </div>
         </div>

@@ -11,6 +11,7 @@ const {
   getResources,
   deleteResource,
 } = require("../controllers/resource.controller");
+const { downloadResource } = require('../controllers/resource.controller');
 router.use(protect);
 router.post(
   "/",
@@ -24,5 +25,6 @@ router.post(
   createResource,
 );
 router.get("/", getResources); // all logged-in roles can browse
+router.get('/:id/download', downloadResource);
 router.delete("/:id", authorize("admin", "mentor"), deleteResource);
 module.exports = router;
