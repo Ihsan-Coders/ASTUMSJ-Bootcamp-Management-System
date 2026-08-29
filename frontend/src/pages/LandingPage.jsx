@@ -8,12 +8,14 @@ import Alumni from "./AlumniPage";
 
 export default function LandingPage() {
   return (
-    <div>
+    <div className="min-h-screen">
       <Hero />
       <About />
+
       <section id="alumni">
         <Alumni />
       </section>
+
       <Tracks />
       <Mentors />
       <FAQ />
