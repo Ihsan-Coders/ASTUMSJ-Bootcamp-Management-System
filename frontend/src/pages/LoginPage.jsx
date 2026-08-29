@@ -358,6 +358,7 @@ export default function LoginPage() {
                         h-16
                         w-16
                         object-contain
+                        rounded-full
                         drop-shadow-[0_0_20px_rgba(212,175,55,0.40)]
                         sm:h-20
                         sm:w-20

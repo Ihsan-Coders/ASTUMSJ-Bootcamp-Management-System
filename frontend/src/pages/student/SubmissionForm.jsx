@@ -207,7 +207,7 @@ export default function SubmissionForm({
 
       <div>
         <label className="block text-xs sm:text-sm text-text-secondary mb-1">
-          {isEditing ? "New Attachments" : "Attachments"}
+          {isEditing ? "New Screenshot" : "Upload Screenshot"}
         </label>
 
         <input
@@ -220,7 +220,7 @@ export default function SubmissionForm({
         />
 
         <p className="text-xs text-text-secondary mt-1">
-          Maximum 3 files.
+          Maximum 3 images.
         </p>
       </div>
 

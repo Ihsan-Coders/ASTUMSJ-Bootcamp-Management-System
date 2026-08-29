@@ -1,14 +1,24 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
+
 import { getBatches } from "../../api/batch.api";
+
 import {
   getAttendance,
   markAttendance,
   updateAttendance,
 } from "../../api/attendance.api";
+
+import { getEvents } from "../../api/calendar.api";
+
 import { useToast } from "../../context/ToastContext";
 
-const STATUS_OPTIONS = ["Present", "Absent", "Late", "Excused"];
+const STATUS_OPTIONS = [
+  "Present",
+  "Absent",
+  "Late",
+  "Excused",
+];
 
 const STATUS_COLOR = {
   Present: "bg-emerald/15 text-emerald",
@@ -17,15 +27,15 @@ const STATUS_COLOR = {
   Excused: "bg-text-secondary/15 text-text-secondary",
 };
 
-const isSameDay = (a, b) => {
-  const d1 = new Date(a);
-  const d2 = new Date(b);
-
-  return (
-    d1.getFullYear() === d2.getFullYear() &&
-    d1.getMonth() === d2.getMonth() &&
-    d1.getDate() === d2.getDate()
-  );
+const formatSessionDate = (date) => {
+  return new Date(date).toLocaleString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 };
 
 export default function AdminAttendancePage() {
@@ -33,72 +43,107 @@ export default function AdminAttendancePage() {
 
   const [batch, setBatch] = useState(null);
   const [students, setStudents] = useState([]);
+
+  const [sessions, setSessions] = useState([]);
+  const [selectedSession, setSelectedSession] =
+    useState(null);
+
   const [attendance, setAttendance] = useState({});
 
   const [loading, setLoading] = useState(true);
+  const [loadingAttendance, setLoadingAttendance] =
+    useState(false);
+
   const [marking, setMarking] = useState(null);
   const [editing, setEditing] = useState(null);
   const [updating, setUpdating] = useState(null);
 
   const [error, setError] = useState("");
 
-  /*
-   * Load the currently active batch and today's attendance.
-   */
-  const loadAttendance = async () => {
+  // ======================================================
+  // LOAD ACTIVE BATCH + SCHEDULED SESSIONS
+  // ======================================================
+
+  const loadPage = async () => {
     try {
       setLoading(true);
       setError("");
 
-      /*
-       * Get batches only to find the currently active batch.
-       * Previous/completed batches are never displayed.
-       */
-      const batchesResponse = await getBatches();
-      const batches = batchesResponse.data.data || [];
+      const [
+        batchesResponse,
+        eventsResponse,
+      ] = await Promise.all([
+        getBatches(),
+        getEvents({
+          type: "Session",
+        }),
+      ]);
 
-      const activeBatch = batches.find((item) => item.isActive === true);
+      const batches =
+        batchesResponse.data?.data || [];
+
+      const activeBatch = batches.find(
+        (item) => item.isActive === true,
+      );
 
       if (!activeBatch) {
         setBatch(null);
         setStudents([]);
+        setSessions([]);
+        setSelectedSession(null);
         setAttendance({});
         return;
       }
 
       setBatch(activeBatch);
+      setStudents(activeBatch.students || []);
 
-      const batchStudents = activeBatch.students || [];
-      setStudents(batchStudents);
+      const allSessions =
+        eventsResponse.data?.data || [];
 
-      /*
-       * Get attendance records for the active batch.
-       */
-      const attendanceResponse = await getAttendance({
-        batchId: activeBatch._id,
-      });
+      const batchSessions = allSessions
+        .filter(
+          (event) =>
+            event.type === "Session" &&
+            event.batch &&
+            String(
+              event.batch?._id || event.batch,
+            ) === String(activeBatch._id),
+        )
+        .sort(
+          (a, b) =>
+            new Date(a.date) -
+            new Date(b.date),
+        );
 
-      const records = attendanceResponse.data.data.records || [];
+      setSessions(batchSessions);
+      console.log("ALL SESSIONS:", allSessions);
+      console.log("ACTIVE BATCH ID:", activeBatch._id);
+      console.log("FILTERED SESSIONS:", batchSessions);
 
-      const today = new Date();
-      const todayAttendance = {};
+      // Automatically select the nearest scheduled session.
+      if (batchSessions.length > 0) {
 
-      records.forEach((record) => {
-        if (!isSameDay(record.date, today)) return;
+        const now = new Date();
 
-        const studentId =
-          record.student?._id || record.student;
+        const upcoming =
+          batchSessions.find(
+            (event) =>
+              new Date(event.date) >= now,
+          );
 
-        const key = `${studentId}-${record.session}`;
-
-        todayAttendance[key] = {
-          recordId: record._id,
-          status: record.status,
-        };
-      });
-
-      setAttendance(todayAttendance);
+        setSelectedSession(
+          upcoming || batchSessions[batchSessions.length - 1],
+        );
+      } else {
+        setSelectedSession(null);
+      }
     } catch (err) {
+      console.error(
+        "Failed to load attendance page:",
+        err,
+      );
+
       setError(
         err?.response?.data?.message ||
           "Failed to load attendance",
@@ -110,13 +155,101 @@ export default function AdminAttendancePage() {
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    loadAttendance();
+    loadPage();
   }, []);
 
-  /*
-   * Mark a student's attendance for a specific session.
-   */
-  const handleMark = async (studentId, session, status) => {
+  // ======================================================
+  // LOAD ATTENDANCE FOR SELECTED SESSION
+  // ======================================================
+
+  useEffect(() => {
+    if (!selectedSession || !batch) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setAttendance({});
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadSessionAttendance = async () => {
+      try {
+        setLoadingAttendance(true);
+        setEditing(null);
+
+        const response = await getAttendance({
+          batchId: batch._id,
+          calendarEvent: selectedSession._id,
+        });
+
+        if (cancelled) return;
+
+        const records =
+          response.data?.data?.records || [];
+
+        const mapped = {};
+
+        records.forEach((record) => {
+          const studentId =
+            record.student?._id ||
+            record.student;
+
+          const key = `${studentId}-${record.session}`;
+
+          mapped[key] = {
+            recordId: record._id,
+            status: record.status,
+          };
+        });
+
+        setAttendance(mapped);
+      } catch (err) {
+        if (cancelled) return;
+
+        showToast(
+          err?.response?.data?.message ||
+            "Failed to load session attendance",
+          "error",
+        );
+
+        setAttendance({});
+      } finally {
+        if (!cancelled) {
+          setLoadingAttendance(false);
+        }
+      }
+    };
+
+    loadSessionAttendance();
+
+    return () => {
+      cancelled = true;
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedSession, batch]);
+
+  // ======================================================
+  // SELECT SESSION
+  // ======================================================
+
+  const handleSessionChange = (e) => {
+    const session = sessions.find(
+      (item) => item._id === e.target.value,
+    );
+
+    setSelectedSession(session || null);
+  };
+
+  // ======================================================
+  // MARK ATTENDANCE
+  // ======================================================
+
+  const handleMark = async (
+    studentId,
+    session,
+    status,
+  ) => {
+    if (!selectedSession || !batch) return;
+
     const actionKey = `${studentId}-${session}`;
 
     try {
@@ -125,17 +258,51 @@ export default function AdminAttendancePage() {
       await markAttendance({
         student: studentId,
         batch: batch._id,
-        date: new Date(),
+
+        // Use the scheduled calendar session.
+        calendarEvent: selectedSession._id,
+
+        // Backend stores the date as the attendance date.
+        date: selectedSession.date,
+
         session,
         status,
       });
 
       showToast(
-        `${session === "start" ? "Start" : "End"} attendance marked successfully`,
+        `${
+          session === "start"
+            ? "Start"
+            : "End"
+        } attendance marked successfully`,
         "success",
       );
 
-      await loadAttendance();
+      const response = await getAttendance({
+        batchId: batch._id,
+        calendarEvent:
+          selectedSession._id,
+      });
+
+      const records =
+        response.data?.data?.records || [];
+
+      const mapped = {};
+
+      records.forEach((record) => {
+        const studentId =
+          record.student?._id ||
+          record.student;
+
+        const key = `${studentId}-${record.session}`;
+
+        mapped[key] = {
+          recordId: record._id,
+          status: record.status,
+        };
+      });
+
+      setAttendance(mapped);
     } catch (err) {
       showToast(
         err?.response?.data?.message ||
@@ -147,10 +314,14 @@ export default function AdminAttendancePage() {
     }
   };
 
-  /*
-   * Update an existing attendance record.
-   */
-  const handleUpdate = async (recordId, status) => {
+  // ======================================================
+  // UPDATE ATTENDANCE
+  // ======================================================
+
+  const handleUpdate = async (
+    recordId,
+    status,
+  ) => {
     try {
       setUpdating(recordId);
 
@@ -165,7 +336,34 @@ export default function AdminAttendancePage() {
 
       setEditing(null);
 
-      await loadAttendance();
+      if (selectedSession && batch) {
+        const response =
+          await getAttendance({
+            batchId: batch._id,
+            calendarEvent:
+              selectedSession._id,
+        });
+
+        const records =
+          response.data?.data?.records || [];
+
+        const mapped = {};
+
+        records.forEach((record) => {
+          const studentId =
+            record.student?._id ||
+            record.student;
+
+          const key = `${studentId}-${record.session}`;
+
+          mapped[key] = {
+            recordId: record._id,
+            status: record.status,
+          };
+        });
+
+        setAttendance(mapped);
+      }
     } catch (err) {
       showToast(
         err?.response?.data?.message ||
@@ -177,24 +375,28 @@ export default function AdminAttendancePage() {
     }
   };
 
-  /*
-   * Render one attendance cell.
-   */
-  const renderAttendanceCell = (student, session) => {
+  // ======================================================
+  // RENDER ATTENDANCE CELL
+  // ======================================================
+
+  const renderAttendanceCell = (
+    student,
+    session,
+  ) => {
     const key = `${student._id}-${session}`;
+
     const record = attendance[key];
+
     const isEditing = editing === key;
     const isMarking = marking === key;
 
-    /*
-     * No record yet.
-     */
     if (!record) {
       return (
         <div className="flex flex-wrap gap-1.5">
           {STATUS_OPTIONS.map((status) => (
             <button
               key={status}
+              type="button"
               onClick={() =>
                 handleMark(
                   student._id,
@@ -216,29 +418,31 @@ export default function AdminAttendancePage() {
                 disabled:cursor-not-allowed
               `}
             >
-              {isMarking ? "Marking..." : status}
+              {isMarking
+                ? "Marking..."
+                : status}
             </button>
           ))}
         </div>
       );
     }
 
-    /*
-     * Editing an existing record.
-     */
     if (isEditing) {
       return (
         <div className="flex flex-wrap gap-1.5">
           {STATUS_OPTIONS.map((status) => (
             <button
               key={status}
+              type="button"
               onClick={() =>
                 handleUpdate(
                   record.recordId,
                   status,
                 )
               }
-              disabled={updating === record.recordId}
+              disabled={
+                updating === record.recordId
+              }
               className={`
                 text-xs
                 px-2.5
@@ -258,7 +462,10 @@ export default function AdminAttendancePage() {
           ))}
 
           <button
-            onClick={() => setEditing(null)}
+            type="button"
+            onClick={() =>
+              setEditing(null)
+            }
             className="text-xs text-text-secondary hover:text-text-primary px-1"
           >
             Cancel
@@ -267,9 +474,6 @@ export default function AdminAttendancePage() {
       );
     }
 
-    /*
-     * Existing record.
-     */
     return (
       <div className="flex items-center gap-2">
         <span
@@ -285,7 +489,10 @@ export default function AdminAttendancePage() {
         </span>
 
         <button
-          onClick={() => setEditing(key)}
+          type="button"
+          onClick={() =>
+            setEditing(key)
+          }
           className="text-xs text-gold hover:underline"
         >
           Edit
@@ -294,11 +501,35 @@ export default function AdminAttendancePage() {
     );
   };
 
+  // ======================================================
+  // DERIVED DATA
+  // ======================================================
+
+  const sessionLabel = useMemo(() => {
+    if (!selectedSession) {
+      return "No session selected";
+    }
+
+    return `${selectedSession.title} — ${formatSessionDate(
+      selectedSession.date,
+    )}`;
+  }, [selectedSession]);
+
+  // ======================================================
+  // RENDER
+  // ======================================================
+
   return (
     <div className="pt-24 sm:pt-28 px-4 sm:px-6 pb-24 md:pb-12 max-w-7xl mx-auto">
       <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{
+          opacity: 0,
+          y: 10,
+        }}
+        animate={{
+          opacity: 1,
+          y: 0,
+        }}
         className="mb-6"
       >
         <h1 className="text-2xl sm:text-3xl font-bold text-text-primary">
@@ -306,7 +537,8 @@ export default function AdminAttendancePage() {
         </h1>
 
         <p className="text-sm text-text-secondary mt-1">
-          Mark today's attendance for the active batch.
+          Select a scheduled class session and
+          mark attendance for that session.
         </p>
       </motion.div>
 
@@ -329,16 +561,20 @@ export default function AdminAttendancePage() {
           </p>
 
           <p className="text-sm text-text-secondary mt-2">
-            There is currently no active batch for attendance.
+            There is currently no active batch for
+            attendance.
           </p>
         </div>
       )}
 
       {!loading && !error && batch && (
         <>
-          {/* Active batch information */}
+          {/* ==========================================
+              BATCH + SESSION SELECTOR
+          ========================================== */}
+
           <div className="glass-card glow-border rounded-xl p-5 mb-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="grid lg:grid-cols-2 gap-5">
               <div>
                 <p className="text-xs uppercase tracking-wide text-gold">
                   Active Batch
@@ -347,83 +583,182 @@ export default function AdminAttendancePage() {
                 <h2 className="text-lg font-semibold text-text-primary mt-1">
                   {batch.name}
                 </h2>
+
+                <p className="text-sm text-text-secondary mt-1">
+                  {students.length}{" "}
+                  {students.length === 1
+                    ? "student"
+                    : "students"}
+                </p>
               </div>
 
-              <div className="text-sm text-text-secondary">
-                {students.length}{" "}
-                {students.length === 1
-                  ? "student"
-                  : "students"}
+              <div>
+                <label className="block text-xs uppercase tracking-wide text-gold mb-2">
+                  Attendance Session
+                </label>
+
+                {sessions.length === 0 ? (
+                  <div className="rounded-lg border border-border bg-background p-3">
+                    <p className="text-sm text-text-secondary">
+                      No class sessions have been
+                      scheduled for this batch.
+                    </p>
+
+                    <p className="text-xs text-text-secondary mt-1">
+                      Create a session announcement
+                      first. It will automatically
+                      appear here.
+                    </p>
+                  </div>
+                ) : (
+                  <select
+                    value={
+                      selectedSession?._id || ""
+                    }
+                    onChange={
+                      handleSessionChange
+                    }
+                    className="w-full p-2.5 rounded-lg border border-border bg-background text-text-primary text-sm"
+                  >
+                    {sessions.map(
+                      (session) => (
+                        <option
+                          key={session._id}
+                          value={session._id}
+                        >
+                          {session.title} —{" "}
+                          {formatSessionDate(
+                            session.date,
+                          )}
+                        </option>
+                      ),
+                    )}
+                  </select>
+                )}
               </div>
             </div>
+
+            {selectedSession && (
+              <div className="mt-4 rounded-lg border border-gold/30 bg-gold/10 p-3">
+                <p className="text-xs uppercase tracking-wide text-gold">
+                  Currently marking
+                </p>
+
+                <p className="text-sm font-semibold text-text-primary mt-1">
+                  {sessionLabel}
+                </p>
+              </div>
+            )}
           </div>
 
-          {/* No students */}
+          {/* ==========================================
+              NO STUDENTS
+          ========================================== */}
+
           {students.length === 0 && (
             <div className="glass-card glow-border rounded-xl p-10 text-center text-text-secondary">
-              No students are enrolled in the active batch.
+              No students are enrolled in the active
+              batch.
             </div>
           )}
 
-          {/* Attendance table */}
-          {students.length > 0 && (
-            <div className="glass-card glow-border rounded-xl overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[850px]">
-                  <thead>
-                    <tr className="border-b border-border bg-surface-solid/40">
-                      <th className="text-left px-5 py-4 text-sm font-semibold text-text-primary">
-                        Student
-                      </th>
+          {/* ==========================================
+              NO SESSION
+          ========================================== */}
 
-                      <th className="text-left px-5 py-4 text-sm font-semibold text-text-primary">
-                        Start
-                      </th>
+          {students.length > 0 &&
+            !selectedSession && (
+              <div className="glass-card glow-border rounded-xl p-10 text-center">
+                <p className="text-text-primary font-medium">
+                  No session selected
+                </p>
 
-                      <th className="text-left px-5 py-4 text-sm font-semibold text-text-primary">
-                        End
-                      </th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {students.map((student) => (
-                      <tr
-                        key={student._id}
-                        className="border-b border-border/50 last:border-0"
-                      >
-                        <td className="px-5 py-4 align-top">
-                          <p className="text-sm font-medium text-text-primary">
-                            {student.name}
-                          </p>
-
-                          {student.email && (
-                            <p className="text-xs text-text-secondary mt-1">
-                              {student.email}
-                            </p>
-                          )}
-                        </td>
-
-                        <td className="px-5 py-4 align-top">
-                          {renderAttendanceCell(
-                            student,
-                            "start",
-                          )}
-                        </td>
-
-                        <td className="px-5 py-4 align-top">
-                          {renderAttendanceCell(
-                            student,
-                            "end",
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <p className="text-sm text-text-secondary mt-2">
+                  Create a class session announcement
+                  and it will appear in the attendance
+                  selector.
+                </p>
               </div>
-            </div>
-          )}
+            )}
+
+          {/* ==========================================
+              ATTENDANCE TABLE
+          ========================================== */}
+
+          {students.length > 0 &&
+            selectedSession && (
+              <div className="glass-card glow-border rounded-xl overflow-hidden">
+                {loadingAttendance ? (
+                  <div className="p-10 text-center text-text-secondary">
+                    Loading attendance for this
+                    session...
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[850px]">
+                      <thead>
+                        <tr className="border-b border-border bg-surface-solid/40">
+                          <th className="text-left px-5 py-4 text-sm font-semibold text-text-primary">
+                            Student
+                          </th>
+
+                          <th className="text-left px-5 py-4 text-sm font-semibold text-text-primary">
+                            Start
+                          </th>
+
+                          <th className="text-left px-5 py-4 text-sm font-semibold text-text-primary">
+                            End
+                          </th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {students.map(
+                          (student) => (
+                            <tr
+                              key={
+                                student._id
+                              }
+                              className="border-b border-border/50 last:border-0"
+                            >
+                              <td className="px-5 py-4 align-top">
+                                <p className="text-sm font-medium text-text-primary">
+                                  {
+                                    student.name
+                                  }
+                                </p>
+
+                                {student.email && (
+                                  <p className="text-xs text-text-secondary mt-1">
+                                    {
+                                      student.email
+                                    }
+                                  </p>
+                                )}
+                              </td>
+
+                              <td className="px-5 py-4 align-top">
+                                {renderAttendanceCell(
+                                  student,
+                                  "start",
+                                )}
+                              </td>
+
+                              <td className="px-5 py-4 align-top">
+                                {renderAttendanceCell(
+                                  student,
+                                  "end",
+                                )}
+                              </td>
+                            </tr>
+                          ),
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
         </>
       )}
     </div>

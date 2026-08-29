@@ -28,7 +28,7 @@ export default function Contact() {
   const [sent, setSent] = useState(false);
   const [focused, setFocused] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     setSent(true);
