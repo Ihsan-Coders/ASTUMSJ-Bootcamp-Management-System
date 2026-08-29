@@ -9,7 +9,7 @@ export default function RegisterPage() {
         initial={{ opacity: 0, y: 30, scale: 0.96 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="w-full max-w-sm"
+        className="w-full "
       >
         <RegisterForm />
       </motion.div>

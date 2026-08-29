@@ -68,7 +68,7 @@ export default function RegisterForm() {
     "block text-sm font-medium text-text-primary mb-1.5";
 
   return (
-    <div className="w-full max-w-3xl mx-auto">
+    <div className="w-full max-w-7xl mx-auto">
       <form
         onSubmit={handleSubmit}
         className="glass-card glow-border rounded-2xl p-6 sm:p-8 lg:p-10"
