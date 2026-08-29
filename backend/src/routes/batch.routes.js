@@ -1,7 +1,7 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const protect = require('../middleware/auth.middleware');
-const authorize = require('../middleware/role.middleware');
+const protect = require("../middleware/auth.middleware");
+const authorize = require("../middleware/role.middleware");
 const {
   createBatch, getBatches, getOpenBatches, updateBatch, deleteBatch,
   assignMentorToBatch, enrollStudentInBatch, setAcceptingBatch,
@@ -9,7 +9,7 @@ const {
 const validate = require('../middleware/validate.middleware');
 const { createBatchSchema, updateBatchSchema } = require('../validators/batch.validator');
 
-router.get('/open', getOpenBatches); // public — RegisterForm needs this, no login required
+router.get("/open", getOpenBatches); // public — RegisterForm needs this, no login required
 router.use(protect);
 router.get('/', authorize('admin', 'mentor'), getBatches);
 router.post('/', authorize('admin'), validate(createBatchSchema), createBatch);

@@ -11,7 +11,6 @@ const allowedBatchFields = [
   "isActive",
 ];
 
-
 const getAllowedUpdates = (body) => {
   const updates = {};
 
@@ -24,14 +23,12 @@ const getAllowedUpdates = (body) => {
   return updates;
 };
 
+/**
+ * CREATE BATCH
+ */
 const createBatch = asyncHandler(async (req, res) => {
-  const {
-    name,
-    startDate,
-    endDate,
-    registrationStart,
-    registrationEnd,
-  } = req.body;
+  const { name, startDate, endDate, registrationStart, registrationEnd } =
+    req.body;
 
   const batch = await Batch.create({
     name,
@@ -50,6 +47,9 @@ const createBatch = asyncHandler(async (req, res) => {
   });
 });
 
+/**
+ * GET ALL BATCHES
+ */
 const getBatches = asyncHandler(async (req, res) => {
   const batches = await Batch.find().populate(
     "mentors students",
@@ -63,6 +63,16 @@ const getBatches = asyncHandler(async (req, res) => {
   });
 });
 
+  res.status(200).json({
+    success: true,
+    data: batches,
+    message: "Batches fetched",
+  });
+});
+
+/**
+ * GET OPEN BATCHES
+ */
 const getOpenBatches = asyncHandler(async (req, res) => {
   const now = new Date();
 
@@ -80,6 +90,9 @@ const getOpenBatches = asyncHandler(async (req, res) => {
   });
 });
 
+/**
+ * UPDATE BATCH
+ */
 const updateBatch = asyncHandler(async (req, res) => {
   // IMPORTANT: get the allowed updates from the request body
   const updates = getAllowedUpdates(req.body);
@@ -128,6 +141,9 @@ const updateBatch = asyncHandler(async (req, res) => {
   });
 });
 
+/**
+ * DELETE BATCH
+ */
 const deleteBatch = asyncHandler(async (req, res) => {
   const batch = await Batch.findById(req.params.id);
 
@@ -159,6 +175,16 @@ const deleteBatch = asyncHandler(async (req, res) => {
   });
 });
 
+/**
+ * ASSIGN MENTOR TO BATCH
+ *
+ * Relationships:
+ *
+ * Batch  -> MANY mentors
+ * Mentor -> MANY batches
+ *
+ * Adding a mentor does NOT remove existing mentors.
+ */
 const assignMentorToBatch = asyncHandler(async (req, res) => {
   const { batchId, mentorId } = req.body;
 
@@ -183,6 +209,33 @@ const assignMentorToBatch = asyncHandler(async (req, res) => {
   });
 });
 
+  // Add mentor without removing existing mentors.
+  // $addToSet prevents duplicate mentors.
+  await Batch.findByIdAndUpdate(batchId, {
+    $addToSet: {
+      mentors: mentor._id,
+    },
+  });
+
+  const updatedBatch = await Batch.findById(batchId)
+    .populate("mentors", "name email role")
+    .populate("students", "name email role");
+
+  res.status(200).json({
+    success: true,
+    data: updatedBatch,
+    message: "Mentor assigned to batch",
+  });
+});
+
+/**
+ * ENROLL STUDENT IN BATCH
+ *
+ * Student -> ONE batch
+ *
+ * Enrollment does NOT automatically assign a mentor.
+ * The admin explicitly assigns a mentor afterward.
+ */
 const enrollStudentInBatch = asyncHandler(async (req, res) => {
   const { batchId, studentId } = req.body;
 
