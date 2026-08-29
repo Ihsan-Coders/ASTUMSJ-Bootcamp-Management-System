@@ -293,8 +293,7 @@ export default function Navbar({ minimal = false }) {
   const location = useLocation();
 
   const isAuthPage =
-    location.pathname === "/login" ||
-    location.pathname === "/register";
+    location.pathname === "/login" || location.pathname === "/register";
 
   const showMinimal = minimal || isAuthPage;
 
@@ -373,19 +372,73 @@ export default function Navbar({ minimal = false }) {
 
             <button
               onClick={handleLogin}
-              className="text-sm text-text-secondary hover:text-text-primary transition-colors"
+              className="
+    group
+    relative
+    overflow-hidden
+    rounded-lg
+    border
+    border-gold/30
+    bg-white/[0.04]
+    px-4
+    py-2
+    text-sm
+    font-semibold
+    text-text-secondary
+    backdrop-blur-sm
+    transition-all
+    duration-300
+    hover:-translate-y-0.5
+    hover:border-gold/70
+    hover:bg-gold/10
+    hover:text-gold
+    hover:shadow-[0_0_18px_rgba(212,175,55,0.15)]
+    active:translate-y-0
+  "
             >
-              Login
-            </button>
+              <span
+                className="
+      absolute
+      inset-0
+      -translate-x-full
+      bg-gradient-to-r
+      from-transparent
+      via-white/10
+      to-transparent
+      transition-transform
+      duration-700
+      group-hover:translate-x-full
+    "
+              />
 
-            <button
-              onClick={handleGetStarted}
-              className="text-sm px-4 py-2 rounded-lg font-semibold text-obsidian
-                         bg-gradient-to-r from-gold to-emerald
-                         hover:shadow-[0_0_20px_rgba(212,175,55,0.4)]
-                         transition-shadow"
-            >
-              Get Started
+              <span className="relative z-10 flex items-center gap-2">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4 transition-transform duration-300 group-hover:scale-110"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={1.8}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="m10 17 5-5-5-5"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M15 12H3"
+                  />
+                </svg>
+
+                <span>Login</span>
+              </span>
             </button>
           </div>
 
@@ -532,7 +585,6 @@ export default function Navbar({ minimal = false }) {
                    bg-gradient-to-b from-[rgba(10,35,26,0.95)] to-[rgba(10,35,26,0.85)]"
       >
         <div className="px-4 py-3 flex items-center justify-between">
-
           {/* Hamburger + Logo are together on the LEFT */}
           <div className="flex items-center gap-3">
             <button
