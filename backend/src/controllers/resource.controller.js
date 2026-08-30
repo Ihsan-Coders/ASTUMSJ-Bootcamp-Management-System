@@ -152,3 +152,55 @@ const deleteResource = asyncHandler(async (req, res) => {
 });
 
 module.exports = { createResource, getResources, deleteResource };
+
+// Stream/download a resource file through the backend to avoid cross-origin
+// download issues and to enforce visibility checks. GET /api/resources/:id/download
+const axios = require('axios');
+const downloadResource = asyncHandler(async (req, res) => {
+  const resource = await Resource.findById(req.params.id).populate('batch', 'name');
+
+  if (!resource) {
+    return res.status(404).json({ success: false, data: null, message: 'Resource not found' });
+  }
+
+  // Visibility check for students (same logic as getResources)
+  if (req.user.role === 'student') {
+    const student = await User.findById(req.user.id).select('batch');
+    const batchIds = [null];
+    if (student?.batch) batchIds.push(student.batch.toString());
+    const allowed = batchIds.includes(resource.batch ? resource.batch.toString() : null);
+    if (!allowed) {
+      return res.status(403).json({ success: false, data: null, message: 'You are not allowed to access this resource' });
+    }
+  }
+
+  // Only uploaded files (Document) are downloadable via this endpoint.
+  if (!resource.fileName || !resource.url) {
+    return res.status(400).json({ success: false, data: null, message: 'Resource is not a downloadable file' });
+  }
+
+  // Stream the remote file and set attachment headers so browser downloads it
+  try {
+    const remote = await axios.get(resource.url, { responseType: 'stream' });
+    const disposition = `attachment; filename="${resource.fileName.replace(/\"/g, '')}"`;
+    res.setHeader('Content-Disposition', disposition);
+    if (resource.mimeType) res.setHeader('Content-Type', resource.mimeType);
+    // Pipe remote stream to response
+    remote.data.pipe(res);
+  } catch (err) {
+    console.error('Download proxy failed:', err.message || err);
+    // Fallback: redirect the client to the Cloudinary `fl_attachment` URL
+    try {
+      if (resource.url && resource.url.includes('/upload/')) {
+        const downloadUrl = resource.url.replace('/upload/', '/upload/fl_attachment/');
+        return res.redirect(302, downloadUrl);
+      }
+    } catch (redirErr) {
+      console.error('Fallback redirect failed:', redirErr.message || redirErr);
+    }
+
+    return res.status(502).json({ success: false, data: null, message: 'Failed to proxy download' });
+  }
+});
+
+module.exports = { createResource, getResources, deleteResource, downloadResource };

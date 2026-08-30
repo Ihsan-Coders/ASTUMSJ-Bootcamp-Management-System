@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link2, FileText, Video, Download, Trash2 } from "lucide-react";
+import axiosInstance from "../../api/axiosInstance";
 import Modal from "../common/Modal";
 
 function formatSize(bytes) {
@@ -37,6 +38,51 @@ function ThumbnailFallback({ type }) {
 
 export default function ResourceCard({ resource, canDelete, onDelete, deleting }) {
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+
+  const handleDownload = async (e) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    setDownloading(true);
+    try {
+      const res = await axiosInstance.get(`/resources/${resource._id}/download`, {
+        responseType: 'blob',
+      });
+
+      const cd = res.headers['content-disposition'] || '';
+      let filename = resource.fileName || 'download.bin';
+      const match = cd.match(/filename\*?=([^;]+)/);
+      if (match) {
+        filename = match[1].replace(/UTF-8''/, '').replace(/"/g, '');
+      }
+
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const a = document.createElement('a');
+      a.href = url;
+      a.setAttribute('download', filename);
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Download failed', err);
+      const msg = err?.response?.data?.message || 'Download failed';
+      // Fallback: if the resource was uploaded to Cloudinary, open a
+      // direct Cloudinary URL with `fl_attachment` so the browser downloads it.
+      try {
+        if (resource.url && resource.url.includes('/upload/')) {
+          const downloadUrl = resource.url.replace('/upload/', '/upload/fl_attachment/');
+          window.open(downloadUrl, '_blank');
+          return;
+        }
+      } catch (fallbackErr) {
+        console.error('Fallback download failed', fallbackErr);
+      }
+
+      alert(msg);
+    } finally {
+      setDownloading(false);
+    }
+  };
   // A resource is only genuinely "downloadable" if it's an actual uploaded
   // file (Document type sets fileName on creation) — a Link or Video
   // resource has nowhere to download *from*, so no download affordance
@@ -88,14 +134,44 @@ export default function ResourceCard({ resource, canDelete, onDelete, deleting }
 
         <div className="flex items-center justify-between mt-3">
           {isDownloadable ? (
-            <a
-              href={getDownloadUrl(resource.url)}
-              download={resource.fileName}
-              onClick={(e) => e.stopPropagation()}
+            <button
+              type="button"
+              onClick={async (e) => {
+                e.stopPropagation();
+                setDownloading(true);
+                try {
+                  const res = await axiosInstance.get(`/resources/${resource._id}/download`, {
+                    responseType: 'blob',
+                  });
+
+                  // Try to read filename from headers, fallback to resource.fileName
+                  const cd = res.headers['content-disposition'] || '';
+                  let filename = resource.fileName || 'download.bin';
+                  const match = cd.match(/filename\*?=([^;]+)/);
+                  if (match) {
+                    filename = match[1].replace(/UTF-8''/, '').replace(/"/g, '');
+                  }
+
+                  const url = window.URL.createObjectURL(new Blob([res.data]));
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.setAttribute('download', filename);
+                  document.body.appendChild(a);
+                  a.click();
+                  a.remove();
+                  window.URL.revokeObjectURL(url);
+                } catch (err) {
+                  console.error('Download failed', err);
+                  // show a basic alert - this project uses toasts; keep simple fallback
+                  alert(err?.response?.data?.message || 'Download failed');
+                } finally {
+                  setDownloading(false);
+                }
+              }}
               className="flex items-center gap-1.5 text-xs text-gold hover:underline"
             >
-              <Download size={14} /> Download
-            </a>
+              <Download size={14} /> {downloading ? 'Downloading...' : 'Download'}
+            </button>
           ) : (
             <span />
           )}
@@ -131,13 +207,13 @@ export default function ResourceCard({ resource, canDelete, onDelete, deleting }
               Open {resource.type}
             </a>
             {isDownloadable && (
-              <a
-                href={getDownloadUrl(resource.url)}
-                download={resource.fileName}
+              <button
+                type="button"
+                onClick={(e) => handleDownload(e)}
                 className="flex items-center gap-1.5 px-4 py-2 rounded border border-border text-sm text-text-primary"
               >
-                <Download size={14} /> Download
-              </a>
+                <Download size={14} /> {downloading ? 'Downloading...' : 'Download'}
+              </button>
             )}
           </>
         }
